@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: #0f172a;
+    color: #e2e8f0;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1e293b;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}
+
+/* ── BPMN dark theme ─────────────────────────────────── */
+.bpmn-container .djs-container {
+  background: transparent !important;
+}
+
+/* Task / sub-process rectangles */
+.bpmn-container .djs-element .djs-visual > rect {
+  fill: #1e293b !important;
+  stroke: #6d28d9 !important;
+  stroke-width: 1.5px !important;
+}
+
+/* All text labels */
+.bpmn-container .djs-element .djs-visual text,
+.bpmn-container .djs-element .djs-visual tspan {
+  fill: #e2e8f0 !important;
+  font-size: 12px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* Edge label text (sequence flow labels) */
+.bpmn-container .djs-label text,
+.bpmn-container .djs-label tspan {
+  fill: #94a3b8 !important;
+  font-size: 11px !important;
+}
+
+/* Sequence flow paths + arrows */
+.bpmn-container .djs-connection .djs-visual path {
+  stroke: #4f46e5 !important;
+  stroke-width: 1.5px !important;
+  fill: none !important;
+}
+.bpmn-container .djs-connection .djs-visual marker path,
+.bpmn-container .djs-connection .djs-visual marker polygon {
+  fill: #4f46e5 !important;
+  stroke: #4f46e5 !important;
+}
+
+/* Start event circle */
+.bpmn-container .djs-element[data-element-id^="StartEvent"] .djs-visual circle,
+.bpmn-container .djs-element[data-element-id^="Start"] .djs-visual circle {
+  fill: #052e16 !important;
+  stroke: #22c55e !important;
+  stroke-width: 2px !important;
+}
+
+/* End event circle */
+.bpmn-container .djs-element[data-element-id^="EndEvent"] .djs-visual circle,
+.bpmn-container .djs-element[data-element-id^="End"] .djs-visual circle {
+  fill: #450a0a !important;
+  stroke: #ef4444 !important;
+  stroke-width: 3px !important;
+}
+
+/* Gateway diamond */
+.bpmn-container .djs-element[data-element-id^="Gateway"] .djs-visual polygon {
+  fill: #2e1065 !important;
+  stroke: #a855f7 !important;
+  stroke-width: 1.5px !important;
+}
+
+/* Gateway X mark */
+.bpmn-container .djs-element[data-element-id^="Gateway"] .djs-visual path {
+  stroke: #c084fc !important;
+  fill: none !important;
+}
+
+/* Hover highlight */
+.bpmn-container .djs-element:not(.djs-connection):hover .djs-visual rect,
+.bpmn-container .djs-element:not(.djs-connection):hover .djs-visual circle,
+.bpmn-container .djs-element:not(.djs-connection):hover .djs-visual polygon {
+  stroke: #a855f7 !important;
+  stroke-width: 2px !important;
+  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.5));
+}
+
+/* Selected element */
+.bpmn-container .djs-element.selected .djs-visual rect,
+.bpmn-container .djs-element.selected .djs-visual circle,
+.bpmn-container .djs-element.selected .djs-visual polygon {
+  stroke: #818cf8 !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.6));
+}
+
+/* Selection outline box */
+.bpmn-container .djs-element .djs-outline {
+  stroke: #818cf8 !important;
+  stroke-width: 1px !important;
+  fill: rgba(99, 102, 241, 0.05) !important;
+}
+
+/* Hide the default bpmn-js white canvas background */
+.bpmn-container .djs-container svg {
+  background: transparent !important;
+}
+
+/* Palette & context pad (editing tools) — hide in viewer mode */
+.bpmn-container .djs-palette {
+  display: none !important;
+}
+.bpmn-container .djs-context-pad {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+}
+.bpmn-container .djs-context-pad .entry {
+  color: #94a3b8 !important;
+}
+.bpmn-container .djs-context-pad .entry:hover {
+  background: #334155 !important;
+}
+
+/* Tooltip */
+.bpmn-container .djs-tooltip {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 6px !important;
+}
+
+/* Arrow marker color fix via SVG filter hack */
+.bpmn-container marker path {
+  fill: #4f46e5 !important;
+  stroke: #4f46e5 !important;
+}
