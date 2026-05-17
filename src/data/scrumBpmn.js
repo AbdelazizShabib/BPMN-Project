@@ -7,6 +7,10 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
 
   <collaboration id="Collab_Scrum">
     <participant id="Pool_Scrum" name="Scrum Framework Process" processRef="ScrumProcess"/>
+    <participant id="Pool_Stakeholders" name="Stakeholders / Customers"/>
+    <messageFlow id="MF_Review"   name="Sprint Demo"    sourceRef="T_SprintReview"    targetRef="Pool_Stakeholders"/>
+    <messageFlow id="MF_Feedback" name="Feedback"       sourceRef="Pool_Stakeholders" targetRef="T_Feedback"/>
+    <messageFlow id="MF_Deploy"   name="Release Notice" sourceRef="T_Deploy"          targetRef="Pool_Stakeholders"/>
   </collaboration>
 
   <process id="ScrumProcess" name="Scrum Framework" isExecutable="true">
@@ -504,6 +508,35 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <bpmndi:BPMNEdge id="F_R1_di" bpmnElement="F_R1">
         <di:waypoint x="4022" y="155"/><di:waypoint x="4120" y="155"/>
         <bpmndi:BPMNLabel><dc:Bounds x="4063" y="137" width="15" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- ── STAKEHOLDERS POOL (below main pool) ── -->
+      <bpmndi:BPMNShape id="Pool_Stakeholders_di" bpmnElement="Pool_Stakeholders" isHorizontal="true">
+        <dc:Bounds x="80" y="820" width="4120" height="100"/>
+      </bpmndi:BPMNShape>
+
+      <!-- ══════════════ MESSAGE FLOWS ══════════════ -->
+
+      <!-- T_SprintReview → Stakeholders: Sprint Demo (vertical, bottom of SM task → pool top) -->
+      <bpmndi:BPMNEdge id="MF_Review_di" bpmnElement="MF_Review">
+        <di:waypoint x="2880" y="415"/>
+        <di:waypoint x="2880" y="820"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="2888" y="607" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- Stakeholders → T_Feedback: Feedback (up from pool, L-shape to right side of T_Feedback) -->
+      <bpmndi:BPMNEdge id="MF_Feedback_di" bpmnElement="MF_Feedback">
+        <di:waypoint x="3000" y="820"/>
+        <di:waypoint x="3000" y="155"/>
+        <di:waypoint x="2930" y="155"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3008" y="487" width="47" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- T_Deploy → Stakeholders: Release Notice (vertical, bottom of Dev task → pool top) -->
+      <bpmndi:BPMNEdge id="MF_Deploy_di" bpmnElement="MF_Deploy">
+        <di:waypoint x="3720" y="675"/>
+        <di:waypoint x="3720" y="820"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3728" y="741" width="76" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>
