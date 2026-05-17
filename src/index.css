@@ -50,12 +50,17 @@
   stroke-width: 1.5px !important;
 }
 
-/* All text labels */
+/* All text labels — paint-order stroke keeps text readable above arrow lines */
 .bpmn-container .djs-element .djs-visual text,
 .bpmn-container .djs-element .djs-visual tspan {
   fill: #e2e8f0 !important;
   font-size: 12px !important;
   font-family: 'Inter', system-ui, sans-serif !important;
+  paint-order: stroke fill;
+  stroke: #0f172a;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 /* Edge label text (sequence flow labels) */
@@ -165,4 +170,22 @@
 .bpmn-container marker path {
   fill: #4f46e5 !important;
   stroke: #4f46e5 !important;
+}
+
+/* ── Sidebar-triggered selection highlight ───────────────────────────────── */
+.bpmn-container .selected-highlight .djs-visual rect,
+.bpmn-container .selected-highlight .djs-visual circle,
+.bpmn-container .selected-highlight .djs-visual ellipse,
+.bpmn-container .selected-highlight .djs-visual polygon {
+  stroke: #7c3aed !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.8));
+}
+
+/* ── Fullscreen canvas background ───────────────────────────────────────── */
+.bpmn-container:-webkit-full-screen {
+  background: #0f172a !important;
+}
+.bpmn-container:fullscreen {
+  background: #0f172a !important;
 }

@@ -194,7 +194,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_Backlog_di" bpmnElement="GW_Backlog" isMarkerVisible="true">
         <dc:Bounds x="768" y="133" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="756" y="184" width="68" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="752" y="100" width="76" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="T_AddStories_di" bpmnElement="T_AddStories">
         <dc:Bounds x="740" y="198" width="100" height="60"/>
@@ -206,7 +206,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_Accepted_di" bpmnElement="GW_Accepted" isMarkerVisible="true">
         <dc:Bounds x="2998" y="133" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="2984" y="184" width="72" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="2980" y="100" width="72" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="T_UpdateBacklog_di" bpmnElement="T_UpdateBacklog">
         <dc:Bounds x="2970" y="198" width="100" height="60"/>
@@ -215,11 +215,11 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- Release PO elements -->
       <bpmndi:BPMNShape id="GW_Release_di" bpmnElement="GW_Release" isMarkerVisible="true">
         <dc:Bounds x="3558" y="133" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="3544" y="184" width="72" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="3540" y="100" width="72" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_MoreSprints_di" bpmnElement="GW_MoreSprints" isMarkerVisible="true">
         <dc:Bounds x="3978" y="133" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="3960" y="184" width="80" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="4026" y="100" width="80" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EE_Released_di" bpmnElement="EE_Released">
         <dc:Bounds x="4120" y="140" width="30" height="30"/>
@@ -238,7 +238,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_Impediment_di" bpmnElement="GW_Impediment" isMarkerVisible="true">
         <dc:Bounds x="1738" y="363" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1722" y="414" width="76" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="1718" y="330" width="76" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="T_RemImpediment_di" bpmnElement="T_RemImpediment">
         <dc:Bounds x="1710" y="432" width="100" height="60"/>
@@ -272,7 +272,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_Capacity_di" bpmnElement="GW_Capacity" isMarkerVisible="true">
         <dc:Bounds x="1458" y="623" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1442" y="674" width="76" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="1510" y="590" width="76" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="T_AdjustScope_di" bpmnElement="T_AdjustScope">
         <dc:Bounds x="1430" y="700" width="100" height="60"/>
@@ -285,7 +285,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_Quality_di" bpmnElement="GW_Quality" isMarkerVisible="true">
         <dc:Bounds x="2158" y="623" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="2142" y="674" width="76" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="2138" y="590" width="76" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="T_FixIssues_di" bpmnElement="T_FixIssues">
         <dc:Bounds x="2130" y="700" width="100" height="60"/>
@@ -295,14 +295,14 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_Tests_di" bpmnElement="GW_Tests" isMarkerVisible="true">
         <dc:Bounds x="2438" y="623" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="2426" y="674" width="68" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="2422" y="590" width="68" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="T_FixDefects_di" bpmnElement="T_FixDefects">
         <dc:Bounds x="2410" y="700" width="100" height="60"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="GW_SprintDone_di" bpmnElement="GW_SprintDone" isMarkerVisible="true">
         <dc:Bounds x="2578" y="623" width="44" height="44"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="2560" y="674" width="80" height="27"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="2626" y="590" width="80" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <!-- Release Dev elements -->
@@ -331,7 +331,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- GW_Backlog → AddStories (PO, down to branch) -->
       <bpmndi:BPMNEdge id="F_BR1_di" bpmnElement="F_BR1">
         <di:waypoint x="790" y="177"/><di:waypoint x="790" y="198"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="797" y="182" width="15" height="14"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="797" y="186" width="15" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- AddStories → Prioritize (PO, loop left-up) -->
@@ -359,7 +359,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- GW_Capacity → AdjustScope (Dev, down to branch) -->
       <bpmndi:BPMNEdge id="F_AS1_di" bpmnElement="F_AS1">
         <di:waypoint x="1480" y="667"/><di:waypoint x="1480" y="700"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1487" y="678" width="15" height="14"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="1487" y="681" width="15" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- AdjustScope → SprintPlan (Dev→SM, loop left-up) -->
@@ -379,7 +379,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- GW_Impediment → RemImpediment (SM, down to branch) -->
       <bpmndi:BPMNEdge id="F_RI1_di" bpmnElement="F_RI1">
         <di:waypoint x="1760" y="407"/><di:waypoint x="1760" y="432"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1767" y="414" width="20" height="14"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="1767" y="418" width="20" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- RemImpediment → DailyScrum (SM, loop left) -->
@@ -399,7 +399,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- GW_Quality → FixIssues (Dev, down) -->
       <bpmndi:BPMNEdge id="F_FI1_di" bpmnElement="F_FI1">
         <di:waypoint x="2180" y="667"/><di:waypoint x="2180" y="700"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="2187" y="678" width="15" height="14"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="2187" y="681" width="15" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- FixIssues → T_Dev (Dev, loop left) -->
@@ -418,7 +418,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- GW_Tests → FixDefects (Dev, down) -->
       <bpmndi:BPMNEdge id="F_FD1_di" bpmnElement="F_FD1">
         <di:waypoint x="2460" y="667"/><di:waypoint x="2460" y="700"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="2467" y="678" width="20" height="14"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="2467" y="681" width="20" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- FixDefects → Testing (Dev, loop left) -->
@@ -457,7 +457,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
       <!-- GW_Accepted → UpdateBacklog (PO, down to branch) -->
       <bpmndi:BPMNEdge id="F_UB1_di" bpmnElement="F_UB1">
         <di:waypoint x="3020" y="177"/><di:waypoint x="3020" y="198"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="3027" y="182" width="15" height="14"/></bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="3027" y="186" width="15" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- UpdateBacklog → SprintPlan (PO→SM, very long backward loop) -->

@@ -78,6 +78,7 @@ export const useStore = create((set, get) => ({
   sprint: initialSprint,
   activityFeed,
   sprintHistory,
+  sidebarOpen: false,
   notifications: [
     { id: 1, message: 'Sprint 5 ends in 10 days', type: 'info', read: false },
     { id: 2, message: 'Omar Hassan earned Sprint Hero badge!', type: 'achievement', read: false },
@@ -135,5 +136,27 @@ export const useStore = create((set, get) => ({
     set(state => ({
       notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
     }))
+  },
+
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  removeTaskFromSprint: (taskId, fromColumn) => {
+    const { sprint, backlog } = get()
+    const task = sprint.columns[fromColumn]?.tasks.find(t => t.id === taskId)
+    if (!task) return
+    const { sprintId, ...backlogTask } = task
+    set({
+      backlog: [...backlog, backlogTask],
+      sprint: {
+        ...sprint,
+        columns: {
+          ...sprint.columns,
+          [fromColumn]: {
+            ...sprint.columns[fromColumn],
+            tasks: sprint.columns[fromColumn].tasks.filter(t => t.id !== taskId),
+          },
+        },
+      },
+    })
   },
 }))

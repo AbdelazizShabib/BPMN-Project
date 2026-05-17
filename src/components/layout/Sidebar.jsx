@@ -1,24 +1,28 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Kanban, Trophy, BarChart3,
-  GitBranch, Users, Bell, Zap, ChevronRight, Star
+  GitBranch, Users, Bell, Zap, ChevronRight, Star, X,
 } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/board', icon: Kanban, label: 'Scrum Board' },
-  { to: '/achievements', icon: Trophy, label: 'Achievements' },
-  { to: '/leaderboard', icon: Users, label: 'Leaderboard' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/bpmn', icon: GitBranch, label: 'BPMN Process' },
+  { to: '/',            icon: LayoutDashboard, label: 'Dashboard'   },
+  { to: '/board',       icon: Kanban,          label: 'Scrum Board' },
+  { to: '/achievements',icon: Trophy,          label: 'Achievements'},
+  { to: '/leaderboard', icon: Users,           label: 'Leaderboard' },
+  { to: '/analytics',   icon: BarChart3,       label: 'Analytics'   },
+  { to: '/bpmn',        icon: GitBranch,       label: 'BPMN Process'},
 ]
 
 export default function Sidebar() {
-  const { currentUser, notifications } = useStore()
+  const { currentUser, notifications, sidebarOpen, setSidebarOpen } = useStore()
+  const location = useLocation()
   const unread = notifications.filter(n => !n.read).length
 
-  const getLevelColor = (level) => {
+  // Close sidebar on navigation (mobile)
+  const handleNavClick = () => setSidebarOpen(false)
+
+  const getLevelColor = level => {
     if (level >= 9) return 'text-yellow-400'
     if (level >= 7) return 'text-purple-400'
     if (level >= 5) return 'text-blue-400'
@@ -26,9 +30,13 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 min-h-screen bg-slate-900 border-r border-slate-700/50 flex flex-col fixed left-0 top-0 bottom-0 z-40">
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-700/50">
+    <aside
+      className={`w-64 min-h-screen bg-slate-900 border-r border-slate-700/50 flex flex-col fixed left-0 top-0 bottom-0 z-40 transition-transform duration-200 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0`}
+    >
+      {/* Logo + mobile close button */}
+      <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-900/40">
             <Zap size={18} className="text-white" />
@@ -38,6 +46,12 @@ export default function Sidebar() {
             <p className="text-xs text-slate-400">Gamified BPMN</p>
           </div>
         </div>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       {/* Current Sprint Badge */}
@@ -57,6 +71,7 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={handleNavClick}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
                 isActive
@@ -83,7 +98,7 @@ export default function Sidebar() {
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
               {currentUser.avatar}
             </div>
-            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-slate-900`} />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-slate-900" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">{currentUser.name}</p>
