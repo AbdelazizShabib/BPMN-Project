@@ -1,17 +1,18 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Kanban, Trophy, BarChart3,
-  GitBranch, Users, Bell, Zap, ChevronRight, Star, X,
+  GitBranch, Users, Bell, Zap, ChevronRight, Star, X, AlertTriangle,
 } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 
 const navItems = [
-  { to: '/',            icon: LayoutDashboard, label: 'Dashboard'   },
-  { to: '/board',       icon: Kanban,          label: 'Scrum Board' },
-  { to: '/achievements',icon: Trophy,          label: 'Achievements'},
-  { to: '/leaderboard', icon: Users,           label: 'Leaderboard' },
-  { to: '/analytics',   icon: BarChart3,       label: 'Analytics'   },
-  { to: '/bpmn',        icon: GitBranch,       label: 'BPMN Process'},
+  { to: '/',            icon: LayoutDashboard, label: 'Dashboard'    },
+  { to: '/board',       icon: Kanban,          label: 'Scrum Board'  },
+  { to: '/achievements',icon: Trophy,          label: 'Achievements' },
+  { to: '/leaderboard', icon: Users,           label: 'Leaderboard'  },
+  { to: '/analytics',   icon: BarChart3,       label: 'Analytics'    },
+  { to: '/bpmn',        icon: GitBranch,       label: 'BPMN Process' },
+  { to: '/risks',       icon: AlertTriangle,   label: 'Risk Analysis' },
 ]
 
 export default function Sidebar() {

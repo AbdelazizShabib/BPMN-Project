@@ -6,6 +6,7 @@ import Achievements from './pages/Achievements'
 import Leaderboard from './pages/Leaderboard'
 import Analytics from './pages/Analytics'
 import BpmnViewer from './pages/BpmnViewer'
+import Risks from './pages/Risks'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/bpmn" element={<BpmnViewer />} />
+          <Route path="/risks" element={<Risks />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -87,16 +87,35 @@ export const useStore = create((set, get) => ({
   currentUser: initialTeamMembers[0],
 
   moveTask: (taskId, fromColumn, toColumn) => {
-    const { sprint } = get()
-    const task = sprint.columns[fromColumn].tasks.find(t => t.id === taskId)
+    const { sprint, teamMembers, currentUser } = get()
+    const task = sprint.columns[fromColumn]?.tasks.find(t => t.id === taskId)
     if (!task) return
+
+    let updatedMembers = teamMembers
+    let updatedCurrentUser = currentUser
+
+    // Award XP when a task is moved to done
+    if (toColumn === 'done' && task.assignee) {
+      const xpGain = task.storyPoints * 20 + (task.priority === 'high' ? Math.round(task.storyPoints * 20 * 0.5) : 0)
+      updatedMembers = teamMembers.map(m =>
+        m.id === task.assignee
+          ? { ...m, xp: m.xp + xpGain, tasksCompleted: m.tasksCompleted + 1 }
+          : m
+      )
+      if (currentUser.id === task.assignee) {
+        updatedCurrentUser = { ...currentUser, xp: currentUser.xp + xpGain, tasksCompleted: currentUser.tasksCompleted + 1 }
+      }
+    }
+
     set({
+      teamMembers: updatedMembers,
+      currentUser: updatedCurrentUser,
       sprint: {
         ...sprint,
         columns: {
           ...sprint.columns,
           [fromColumn]: { ...sprint.columns[fromColumn], tasks: sprint.columns[fromColumn].tasks.filter(t => t.id !== taskId) },
-          [toColumn]: { ...sprint.columns[toColumn], tasks: [...sprint.columns[toColumn].tasks, task] },
+          [toColumn]:   { ...sprint.columns[toColumn],   tasks: [...sprint.columns[toColumn].tasks, task] },
         }
       }
     })
@@ -116,10 +135,10 @@ export const useStore = create((set, get) => ({
   },
 
   addTaskToSprint: (taskId) => {
-    const { backlog, sprint } = get()
+    const { backlog, sprint, currentUser } = get()
     const task = backlog.find(t => t.id === taskId)
     if (!task) return
-    const sprintTask = { ...task, id: `t-${Date.now()}`, sprintId: sprint.id }
+    const sprintTask = { ...task, id: `t-${Date.now()}`, sprintId: sprint.id, assignee: currentUser.id }
     set({
       backlog: backlog.filter(t => t.id !== taskId),
       sprint: {
