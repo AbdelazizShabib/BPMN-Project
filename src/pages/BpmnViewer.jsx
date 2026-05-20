@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import BpmnNavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
-import TokenSimulationModule from 'bpmn-js-token-simulation'
+import TokenSimulationModule from 'bpmn-js-token-simulation/lib/viewer'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-js.css'
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
@@ -465,27 +465,27 @@ const NODE_INFO = {
 }
 
 const groups = [
-  { label: 'Backlog Preparation', color: 'text-blue-400',   ids: ['SE_Start','T_Vision','T_Stories','T_Estimate','T_Prioritize','GW_Backlog','T_AddStories','DS_ProductBacklog'] },
-  { label: 'Sprint Planning',     color: 'text-violet-400', ids: ['T_SprintPlan','TB_SprintPlan','T_Goal','T_SelectItems','T_SprintBacklog','GW_Capacity','T_AdjustScope','DO_SprintGoal','DO_SprintBacklog'] },
-  { label: 'Daily Scrum Loop',    color: 'text-yellow-400', ids: ['T_DailyScrum','GW_Impediment','T_RemImpediment'] },
-  { label: 'Development',         color: 'text-cyan-400',   ids: ['T_Dev','TB_SprintDeadline','T_CodeReview','GW_Quality','T_FixIssues','DO_DoD'] },
-  { label: 'Testing',             color: 'text-pink-400',   ids: ['T_Testing','GW_Tests','T_FixDefects','GW_SprintDone'] },
-  { label: 'Sprint Review',       color: 'text-indigo-400', ids: ['T_PrepDemo','T_SprintReview','T_Feedback','GW_Accepted','T_UpdateBacklog'] },
-  { label: 'Retrospective',       color: 'text-emerald-400',ids: ['T_Retro','T_Improve','T_UpdateProcess'] },
-  { label: 'Release',             color: 'text-amber-400',  ids: ['GW_Release','T_Deploy','EB_Deploy','T_Rollback','T_Monitor','GW_MoreSprints','EE_Released'] },
-  { label: 'CI/CD Pipeline',     color: 'text-green-400',  ids: ['SE_CI_Start','T_CI_Build','T_CI_Test','GW_CI','T_CI_Notify','EE_CI_Done','EE_CI_Fail'] },
+  { label: 'Backlog Preparation', color: 'text-blue-400', ids: ['SE_Start', 'T_Vision', 'T_Stories', 'T_Estimate', 'T_Prioritize', 'GW_Backlog', 'T_AddStories', 'DS_ProductBacklog'] },
+  { label: 'Sprint Planning', color: 'text-violet-400', ids: ['T_SprintPlan', 'TB_SprintPlan', 'T_Goal', 'T_SelectItems', 'T_SprintBacklog', 'GW_Capacity', 'T_AdjustScope', 'DO_SprintGoal', 'DO_SprintBacklog'] },
+  { label: 'Daily Scrum Loop', color: 'text-yellow-400', ids: ['T_DailyScrum', 'GW_Impediment', 'T_RemImpediment'] },
+  { label: 'Development', color: 'text-cyan-400', ids: ['T_Dev', 'TB_SprintDeadline', 'T_CodeReview', 'GW_Quality', 'T_FixIssues', 'DO_DoD'] },
+  { label: 'Testing', color: 'text-pink-400', ids: ['T_Testing', 'GW_Tests', 'T_FixDefects', 'GW_SprintDone'] },
+  { label: 'Sprint Review', color: 'text-indigo-400', ids: ['T_PrepDemo', 'T_SprintReview', 'T_Feedback', 'GW_Accepted', 'T_UpdateBacklog'] },
+  { label: 'Retrospective', color: 'text-emerald-400', ids: ['T_Retro', 'T_Improve', 'T_UpdateProcess'] },
+  { label: 'Release', color: 'text-amber-400', ids: ['GW_Release', 'T_Deploy', 'EB_Deploy', 'T_Rollback', 'T_Monitor', 'GW_MoreSprints', 'EE_Released'] },
+  { label: 'CI/CD Pipeline', color: 'text-green-400', ids: ['SE_CI_Start', 'T_CI_Build', 'T_CI_Test', 'GW_CI', 'T_CI_Notify', 'EE_CI_Done', 'EE_CI_Fail'] },
 ]
 
 const PHASE_COLORS = {
   'Backlog Preparation': { fill: '#0d2240', stroke: '#60a5fa' },
-  'Sprint Planning':     { fill: '#1a1040', stroke: '#a78bfa' },
-  'Daily Scrum':         { fill: '#2d2200', stroke: '#facc15' },
-  'Development':         { fill: '#041f2e', stroke: '#22d3ee' },
-  'Testing':             { fill: '#2d0f1e', stroke: '#f472b6' },
-  'Sprint Review':       { fill: '#0f0f30', stroke: '#818cf8' },
-  'Retrospective':       { fill: '#041f14', stroke: '#34d399' },
-  'Release':             { fill: '#2d1600', stroke: '#fbbf24' },
-  'CI/CD Pipeline':      { fill: '#0a2010', stroke: '#4ade80' },
+  'Sprint Planning': { fill: '#1a1040', stroke: '#a78bfa' },
+  'Daily Scrum': { fill: '#2d2200', stroke: '#facc15' },
+  'Development': { fill: '#041f2e', stroke: '#22d3ee' },
+  'Testing': { fill: '#2d0f1e', stroke: '#f472b6' },
+  'Sprint Review': { fill: '#0f0f30', stroke: '#818cf8' },
+  'Retrospective': { fill: '#041f14', stroke: '#34d399' },
+  'Release': { fill: '#2d1600', stroke: '#fbbf24' },
+  'CI/CD Pipeline': { fill: '#0a2010', stroke: '#4ade80' },
 }
 
 function applyPhaseColors(viewer) {
@@ -499,7 +499,7 @@ function applyPhaseColors(viewer) {
     if (!gfx) return
     const shape = gfx.querySelector('.djs-visual rect, .djs-visual polygon, .djs-visual circle')
     if (!shape) return
-    shape.style.fill   = c.fill
+    shape.style.fill = c.fill
     shape.style.stroke = c.stroke
     shape.style.strokeWidth = '2'
   })
@@ -507,8 +507,8 @@ function applyPhaseColors(viewer) {
 
 function NodeTypeIcon({ type, color, size = 14 }) {
   if (type === 'gateway') return <GitBranch size={size} className={color} />
-  if (type === 'event')   return <Circle    size={size} className={color} />
-  if (type === 'data')    return <Database  size={size} className={color} />
+  if (type === 'event') return <Circle size={size} className={color} />
+  if (type === 'data') return <Database size={size} className={color} />
   return <Play size={size} className={color} />
 }
 
@@ -586,24 +586,24 @@ function NodeOverlay({ node, onClose }) {
 }
 
 export default function BpmnViewer() {
-  const containerRef    = useRef(null)
-  const canvasWrapRef   = useRef(null)
-  const modelerRef      = useRef(null)
+  const containerRef = useRef(null)
+  const canvasWrapRef = useRef(null)
+  const modelerRef = useRef(null)
   const prevHighlighted = useRef(null)
   const sidebarItemRefs = useRef({})
 
-  const [selectedNode,  setSelectedNode]  = useState(null)
-  const [loading,       setLoading]       = useState(true)
-  const [error,         setError]         = useState(null)
-  const [isFullscreen,  setIsFullscreen]  = useState(false)
+  const [selectedNode, setSelectedNode] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current) return
     let destroyed = false
+    let resizeObserver = null
 
     const viewer = new BpmnNavigatedViewer({
       container: containerRef.current,
-      keyboard: { bindTo: document },
       additionalModules: [TokenSimulationModule],
     })
     modelerRef.current = viewer
@@ -619,22 +619,29 @@ export default function BpmnViewer() {
         if (!NODE_INFO[element.id]) return
         setSelectedNode({ id: element.id, ...NODE_INFO[element.id] })
         if (prevHighlighted.current) {
-          try { canvas.removeMarker(prevHighlighted.current, 'selected-highlight') } catch (_) {}
+          try { canvas.removeMarker(prevHighlighted.current, 'selected-highlight') } catch (_) { }
         }
         canvas.addMarker(element.id, 'selected-highlight')
         prevHighlighted.current = element.id
       })
 
-      // Double RAF — ensures browser has computed flex layout dimensions before fitting
-      requestAnimationFrame(() => requestAnimationFrame(() => {
+      // Use ResizeObserver to ensure we zoom and fit only when the container is fully rendered and has non-zero dimensions
+      resizeObserver = new ResizeObserver(entries => {
         if (destroyed) return
-        canvas.zoom('fit-viewport', 'auto')
-        // For this wide diagram, fit-viewport can be extremely zoomed out.
-        // If zoom < 0.25, show the start of the process at a more readable level.
-        if (canvas.zoom() < 0.25) {
-          canvas.zoom(0.28, { x: 1500, y: 460 })
+        for (let entry of entries) {
+          const { width, height } = entry.contentRect
+          if (width > 500 && height > 300) {
+            canvas.zoom('fit-viewport', 'auto')
+            // For this wide diagram, fit-viewport can be extremely zoomed out.
+            // If zoom < 0.25, show the start of the process at a more readable level.
+            if (canvas.zoom() < 0.25) {
+              canvas.zoom(0.28, { x: 1500, y: 460 })
+            }
+            resizeObserver.disconnect()
+          }
         }
-      }))
+      })
+      resizeObserver.observe(containerRef.current)
     }).catch(err => {
       if (destroyed) return
       setError(err.message)
@@ -643,6 +650,9 @@ export default function BpmnViewer() {
 
     return () => {
       destroyed = true
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
       modelerRef.current = null
       viewer.destroy()
     }
@@ -672,7 +682,7 @@ export default function BpmnViewer() {
       : svgEl.querySelector('g')
     if (!baseGroup) return
     const children = Array.from(baseGroup.children)
-    const connLayer  = children.find(c => c.classList.contains('djs-layer-connections'))
+    const connLayer = children.find(c => c.classList.contains('djs-layer-connections'))
     const shapeLayer = children.find(c => c.classList.contains('djs-layer-shapes'))
     if (connLayer && shapeLayer) {
       baseGroup.insertBefore(connLayer, shapeLayer)
@@ -681,9 +691,9 @@ export default function BpmnViewer() {
     }
   }
 
-  const zoom    = dir => { const c = modelerRef.current?.get('canvas'); if (c) c.zoom(dir === 'in' ? c.zoom() * 1.25 : c.zoom() / 1.25) }
+  const zoom = dir => { const c = modelerRef.current?.get('canvas'); if (c) c.zoom(dir === 'in' ? c.zoom() * 1.25 : c.zoom() / 1.25) }
   const fitView = () => modelerRef.current?.get('canvas')?.zoom('fit-viewport', 'auto')
-  const reset   = () => modelerRef.current?.importXML(SCRUM_BPMN).then(() => {
+  const reset = () => modelerRef.current?.importXML(SCRUM_BPMN).then(() => {
     reorderSvgLayers()
     applyPhaseColors(modelerRef.current)
     requestAnimationFrame(() => requestAnimationFrame(() => fitView()))
@@ -699,26 +709,26 @@ export default function BpmnViewer() {
     setSelectedNode({ id, ...info })
     const viewer = modelerRef.current
     if (!viewer || loading) return
-    const canvas          = viewer.get('canvas')
+    const canvas = viewer.get('canvas')
     const elementRegistry = viewer.get('elementRegistry')
     if (prevHighlighted.current) {
-      try { canvas.removeMarker(prevHighlighted.current, 'selected-highlight') } catch (_) {}
+      try { canvas.removeMarker(prevHighlighted.current, 'selected-highlight') } catch (_) { }
     }
     const element = elementRegistry.get(id)
     if (!element) return
     canvas.addMarker(id, 'selected-highlight')
     prevHighlighted.current = id
-    const cx = element.x + (element.width  || 0) / 2
+    const cx = element.x + (element.width || 0) / 2
     const cy = element.y + (element.height || 0) / 2
     canvas.zoom(canvas.zoom(), { x: cx, y: cy })
   }
 
   const controls = [
-    { icon: ZoomIn,                              action: () => zoom('in'),  title: 'Zoom In'    },
-    { icon: ZoomOut,                             action: () => zoom('out'), title: 'Zoom Out'   },
-    { icon: Maximize2,                           action: fitView,           title: 'Fit View'   },
-    { icon: RefreshCw,                           action: reset,             title: 'Reset'      },
-    { icon: isFullscreen ? Minimize : Maximize,  action: toggleFullscreen,  title: isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' },
+    { icon: ZoomIn, action: () => zoom('in'), title: 'Zoom In' },
+    { icon: ZoomOut, action: () => zoom('out'), title: 'Zoom Out' },
+    { icon: Maximize2, action: fitView, title: 'Fit View' },
+    { icon: RefreshCw, action: reset, title: 'Reset' },
+    { icon: isFullscreen ? Minimize : Maximize, action: toggleFullscreen, title: isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' },
   ]
 
   return (
@@ -796,11 +806,10 @@ export default function BpmnViewer() {
                         key={id}
                         ref={el => { if (el) sidebarItemRefs.current[id] = el }}
                         onClick={() => selectNode(id)}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
-                          active
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-colors ${active
                             ? 'bg-violet-900/40 text-violet-300 border border-violet-700/40'
                             : 'text-slate-400 hover:bg-slate-700/40 hover:text-slate-200'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className={`font-medium ${info.color} truncate`}>{info.title}</span>
