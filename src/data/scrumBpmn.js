@@ -58,6 +58,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
         <flowNodeRef>GW_SprintDone</flowNodeRef>
         <flowNodeRef>T_Deploy</flowNodeRef>
         <flowNodeRef>T_Monitor</flowNodeRef>
+        <flowNodeRef>T_Rollback</flowNodeRef>
       </lane>
     </laneSet>
 
@@ -76,7 +77,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
     <!-- SPRINT PLANNING (SM + Dev lanes) -->
     <task id="T_SprintPlan"   name="Sprint Planning&#10;Meeting">      <incoming>F_06</incoming><incoming>F_AS2</incoming><incoming>F_UB2</incoming><outgoing>F_07</outgoing></task>
     <task id="T_Goal"         name="Define&#10;Sprint Goal">           <incoming>F_07</incoming><outgoing>F_08</outgoing></task>
-    <task id="T_SelectItems"  name="Select Backlog&#10;Items">         <incoming>F_08</incoming><outgoing>F_09</outgoing></task>
+    <task id="T_SelectItems"  name="Select Backlog&#10;Items">         <incoming>F_08</incoming><incoming>F_TB_SP</incoming><outgoing>F_09</outgoing></task>
     <task id="T_SprintBacklog" name="Create&#10;Sprint Backlog">       <incoming>F_09</incoming><outgoing>F_10</outgoing></task>
     <exclusiveGateway id="GW_Capacity" name="Team Capacity&#10;Met?"> <incoming>F_10</incoming><outgoing>F_11</outgoing><outgoing>F_AS1</outgoing></exclusiveGateway>
     <task id="T_AdjustScope"  name="Adjust Sprint&#10;Scope">          <incoming>F_AS1</incoming><outgoing>F_AS2</outgoing></task>
@@ -95,7 +96,7 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
     <exclusiveGateway id="GW_SprintDone" name="All Tasks&#10;Done?">   <incoming>F_18</incoming><outgoing>F_19</outgoing><outgoing>F_SD1</outgoing></exclusiveGateway>
 
     <!-- SPRINT REVIEW (SM + PO lanes) -->
-    <task id="T_PrepDemo"    name="Prepare&#10;Sprint Demo">            <incoming>F_19</incoming><outgoing>F_20</outgoing></task>
+    <task id="T_PrepDemo"    name="Prepare&#10;Sprint Demo">            <incoming>F_19</incoming><incoming>F_TB_SD</incoming><outgoing>F_20</outgoing></task>
     <task id="T_SprintReview" name="Sprint Review&#10;Meeting">         <incoming>F_20</incoming><outgoing>F_21</outgoing></task>
     <task id="T_Feedback"    name="Gather Stakeholder&#10;Feedback">    <incoming>F_21</incoming><outgoing>F_22</outgoing></task>
     <exclusiveGateway id="GW_Accepted" name="Increment&#10;Accepted?"> <incoming>F_22</incoming><outgoing>F_23</outgoing><outgoing>F_UB1</outgoing></exclusiveGateway>
@@ -109,8 +110,38 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
     <!-- RELEASE (PO + Dev lanes) -->
     <exclusiveGateway id="GW_Release"    name="Release&#10;Ready?">     <incoming>F_26</incoming><outgoing>F_27</outgoing><outgoing>F_28</outgoing></exclusiveGateway>
     <task id="T_Deploy"        name="Deploy to&#10;Production">          <incoming>F_27</incoming><outgoing>F_29</outgoing></task>
-    <task id="T_Monitor"       name="Monitor &amp;&#10;Validate Release"><incoming>F_29</incoming><outgoing>F_30</outgoing></task>
+    <task id="T_Monitor"       name="Monitor &amp;&#10;Validate Release"><incoming>F_29</incoming><incoming>F_EB2</incoming><outgoing>F_30</outgoing></task>
     <exclusiveGateway id="GW_MoreSprints" name="Continue&#10;Development?"><incoming>F_30</incoming><incoming>F_28</incoming><outgoing>F_MS1</outgoing><outgoing>F_R1</outgoing></exclusiveGateway>
+
+    <!-- BOUNDARY EVENTS -->
+    <boundaryEvent id="TB_SprintPlan" name="4hr&#10;Time-box" attachedToRef="T_SprintPlan" cancelActivity="true">
+      <outgoing>F_TB_SP</outgoing>
+      <timerEventDefinition id="TED_SprintPlan"><timeDuration>PT4H</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <boundaryEvent id="TB_SprintDeadline" name="Sprint&#10;Deadline (2w)" attachedToRef="T_Dev" cancelActivity="true">
+      <outgoing>F_TB_SD</outgoing>
+      <timerEventDefinition id="TED_SprintDeadline"><timeDuration>P14D</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <boundaryEvent id="EB_Deploy" name="Deployment&#10;Error" attachedToRef="T_Deploy" cancelActivity="true">
+      <outgoing>F_EB1</outgoing>
+      <errorEventDefinition id="EED_Deploy"/>
+    </boundaryEvent>
+    <task id="T_Rollback" name="Rollback&#10;Deployment"><incoming>F_EB1</incoming><outgoing>F_EB2</outgoing></task>
+
+    <!-- DATA OBJECTS & STORES -->
+    <dataStoreReference id="DS_ProductBacklog" name="Product Backlog"/>
+    <dataObjectReference id="DO_SprintBacklog" name="Sprint Backlog" dataObjectRef="SpO_1"/>
+    <dataObject id="SpO_1"/>
+    <dataObjectReference id="DO_SprintGoal" name="Sprint Goal" dataObjectRef="SgO_1"/>
+    <dataObject id="SgO_1"/>
+    <dataObjectReference id="DO_DoD" name="Definition&#10;of Done" dataObjectRef="DoDO_1"/>
+    <dataObject id="DoDO_1"/>
+
+    <!-- DATA ASSOCIATIONS -->
+    <association id="Assoc_PBL"  associationDirection="Both" sourceRef="T_Estimate"     targetRef="DS_ProductBacklog"/>
+    <association id="Assoc_SBL"  associationDirection="One"  sourceRef="T_SprintBacklog" targetRef="DO_SprintBacklog"/>
+    <association id="Assoc_Goal" associationDirection="One"  sourceRef="T_Goal"          targetRef="DO_SprintGoal"/>
+    <association id="Assoc_DoD"  associationDirection="One"  sourceRef="DO_DoD"          targetRef="T_Testing"/>
 
     <!-- SEQUENCE FLOWS -->
     <sequenceFlow id="F_01"  sourceRef="SE_Start"      targetRef="T_Vision"/>
@@ -158,6 +189,10 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
     <sequenceFlow id="F_30"  sourceRef="T_Monitor"       targetRef="GW_MoreSprints"/>
     <sequenceFlow id="F_MS1" name="Yes" sourceRef="GW_MoreSprints" targetRef="T_Vision"/>
     <sequenceFlow id="F_R1"  name="No"  sourceRef="GW_MoreSprints" targetRef="EE_Released"/>
+    <sequenceFlow id="F_TB_SP" sourceRef="TB_SprintPlan"     targetRef="T_SelectItems"/>
+    <sequenceFlow id="F_TB_SD" sourceRef="TB_SprintDeadline" targetRef="T_PrepDemo"/>
+    <sequenceFlow id="F_EB1"   sourceRef="EB_Deploy"         targetRef="T_Rollback"/>
+    <sequenceFlow id="F_EB2"   sourceRef="T_Rollback"        targetRef="T_Monitor"/>
   </process>
 
   <bpmndi:BPMNDiagram id="Diagram_1">
@@ -537,6 +572,94 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
         <di:waypoint x="3720" y="675"/>
         <di:waypoint x="3720" y="820"/>
         <bpmndi:BPMNLabel><dc:Bounds x="3728" y="741" width="76" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- ══ BOUNDARY EVENT SHAPES ══ -->
+      <!-- TB_SprintPlan: bottom-left of T_SprintPlan (x=870,y=355,w=100,h=60) → cx=880,cy=415 -->
+      <bpmndi:BPMNShape id="TB_SprintPlan_di" bpmnElement="TB_SprintPlan">
+        <dc:Bounds x="862" y="397" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="838" y="437" width="56" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- TB_SprintDeadline: bottom-left of T_Dev (x=1850,y=615,w=100,h=60) → cx=1870,cy=675 -->
+      <bpmndi:BPMNShape id="TB_SprintDeadline_di" bpmnElement="TB_SprintDeadline">
+        <dc:Bounds x="1852" y="657" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1826" y="697" width="68" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- EB_Deploy: bottom-center of T_Deploy (x=3670,y=615,w=100,h=60) → cx=3720,cy=675 -->
+      <bpmndi:BPMNShape id="EB_Deploy_di" bpmnElement="EB_Deploy">
+        <dc:Bounds x="3702" y="657" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3682" y="697" width="76" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- T_Rollback: directly below T_Deploy -->
+      <bpmndi:BPMNShape id="T_Rollback_di" bpmnElement="T_Rollback">
+        <dc:Bounds x="3670" y="700" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- ══ DATA OBJECT / STORE SHAPES ══ -->
+      <!-- DS_ProductBacklog: PO lane, below T_Estimate -->
+      <bpmndi:BPMNShape id="DS_ProductBacklog_di" bpmnElement="DS_ProductBacklog">
+        <dc:Bounds x="490" y="195" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="476" y="250" width="78" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- DO_SprintBacklog: Dev lane, above T_SprintBacklog -->
+      <bpmndi:BPMNShape id="DO_SprintBacklog_di" bpmnElement="DO_SprintBacklog">
+        <dc:Bounds x="1290" y="540" width="36" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1276" y="594" width="64" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- DO_SprintGoal: SM lane, below T_Goal -->
+      <bpmndi:BPMNShape id="DO_SprintGoal_di" bpmnElement="DO_SprintGoal">
+        <dc:Bounds x="1090" y="440" width="36" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1076" y="494" width="64" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <!-- DO_DoD: Dev lane, above T_Testing -->
+      <bpmndi:BPMNShape id="DO_DoD_di" bpmnElement="DO_DoD">
+        <dc:Bounds x="2270" y="540" width="36" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="2252" y="594" width="72" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- ══ BOUNDARY EVENT FLOWS ══ -->
+      <!-- TB_SprintPlan → T_SelectItems: down through SM lane then into Dev lane -->
+      <bpmndi:BPMNEdge id="F_TB_SP_di" bpmnElement="F_TB_SP">
+        <di:waypoint x="880" y="433"/>
+        <di:waypoint x="880" y="480"/>
+        <di:waypoint x="1200" y="480"/>
+        <di:waypoint x="1200" y="615"/>
+      </bpmndi:BPMNEdge>
+      <!-- TB_SprintDeadline → T_PrepDemo: down then long right through Dev+SM lanes -->
+      <bpmndi:BPMNEdge id="F_TB_SD_di" bpmnElement="F_TB_SD">
+        <di:waypoint x="1870" y="693"/>
+        <di:waypoint x="1870" y="750"/>
+        <di:waypoint x="2740" y="750"/>
+        <di:waypoint x="2740" y="415"/>
+      </bpmndi:BPMNEdge>
+      <!-- EB_Deploy → T_Rollback: straight down -->
+      <bpmndi:BPMNEdge id="F_EB1_di" bpmnElement="F_EB1">
+        <di:waypoint x="3720" y="693"/>
+        <di:waypoint x="3720" y="700"/>
+      </bpmndi:BPMNEdge>
+      <!-- T_Rollback → T_Monitor: right then up -->
+      <bpmndi:BPMNEdge id="F_EB2_di" bpmnElement="F_EB2">
+        <di:waypoint x="3770" y="730"/>
+        <di:waypoint x="3860" y="730"/>
+        <di:waypoint x="3860" y="675"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- ══ DATA ASSOCIATION EDGES ══ -->
+      <bpmndi:BPMNEdge id="Assoc_PBL_di" bpmnElement="Assoc_PBL">
+        <di:waypoint x="530" y="185"/>
+        <di:waypoint x="515" y="195"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Assoc_SBL_di" bpmnElement="Assoc_SBL">
+        <di:waypoint x="1340" y="615"/>
+        <di:waypoint x="1308" y="590"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Assoc_Goal_di" bpmnElement="Assoc_Goal">
+        <di:waypoint x="1100" y="415"/>
+        <di:waypoint x="1108" y="440"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Assoc_DoD_di" bpmnElement="Assoc_DoD">
+        <di:waypoint x="2288" y="590"/>
+        <di:waypoint x="2288" y="615"/>
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

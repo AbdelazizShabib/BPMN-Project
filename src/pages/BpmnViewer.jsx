@@ -6,7 +6,7 @@ import { SCRUM_BPMN } from '../data/scrumBpmn'
 import Header from '../components/layout/Header'
 import {
   ZoomIn, ZoomOut, Maximize2, Maximize, Minimize, RefreshCw,
-  Info, Play, Zap, AlertTriangle, TrendingUp, Circle, GitBranch, X,
+  Info, Play, Zap, AlertTriangle, TrendingUp, Circle, GitBranch, X, Database, Clock, FileText,
 } from 'lucide-react'
 
 const NODE_INFO = {
@@ -356,22 +356,79 @@ const NODE_INFO = {
     color: 'text-orange-400', type: 'gateway', phase: 'Release',
     xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
   },
+
+  // ── Boundary Events ─────────────────────────────────────────────────────────
+  TB_SprintPlan: {
+    title: 'Sprint Planning Time-box (4h)',
+    desc: 'An interrupting timer boundary event on Sprint Planning. If the session exceeds 4 hours, this event fires, cancels ongoing discussion, and forces the process to backlog item selection — ensuring the team commits with whatever scope has been agreed.',
+    color: 'text-orange-400', type: 'event', phase: 'Sprint Planning',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  TB_SprintDeadline: {
+    title: 'Sprint Deadline (2 weeks)',
+    desc: 'An interrupting timer boundary event on Development Work. After 2 calendar weeks the sprint time-box expires: development is halted and the process jumps directly to Sprint Review, enforcing Scrum\'s fixed-length sprint cadence regardless of task completion status.',
+    color: 'text-orange-400', type: 'event', phase: 'Development',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  EB_Deploy: {
+    title: 'Deployment Error',
+    desc: 'An interrupting error boundary event on Deploy to Production. If the pipeline reports a critical failure — build error, failed smoke test, health-check timeout — this event catches it, cancels the deployment task, and triggers the Rollback Deployment path.',
+    color: 'text-red-400', type: 'event', phase: 'Release',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  T_Rollback: {
+    title: 'Rollback Deployment',
+    desc: 'Triggered by a deployment error, the team executes a controlled rollback to the last stable production version. After confirming stability, they perform an incident post-mortem, apply a fix, and re-enter the monitoring phase before scheduling a new release attempt.',
+    color: 'text-amber-400', type: 'task', phase: 'Release',
+    xpReward: '+200 XP',
+    gamification: 'Rollback Resilience: +200 XP for a clean rollback completed within 30 minutes of incident detection. Rapid, practised recovery is rewarded as a first-class engineering skill.',
+    achievement: 'Rollback Resilience',
+    behavioralEffect: 'Normalises rollback as a planned, rehearsed procedure rather than a panic response — building confidence in frequent, small releases.',
+    risk: 'Teams may allow or introduce deliberate deployment instability to repeatedly trigger rollback XP, undermining the production reliability culture the mechanic is meant to build.',
+  },
+
+  // ── Data Objects & Stores ────────────────────────────────────────────────────
+  DS_ProductBacklog: {
+    title: 'Product Backlog (Data Store)',
+    desc: 'A persistent, ordered data store holding every known product requirement — user stories, bugs, and technical tasks. The Product Owner owns and prioritises it. It is continuously refined between sprints and is the single source of truth for what the team will build.',
+    color: 'text-blue-400', type: 'data', phase: 'Backlog Preparation',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  DO_SprintBacklog: {
+    title: 'Sprint Backlog (Data Object)',
+    desc: 'A data object created during Sprint Planning containing the selected stories decomposed into daily tasks. The Development Team owns it and updates it in real time. It is the live plan for achieving the Sprint Goal and becomes the primary transparency artefact during the sprint.',
+    color: 'text-violet-400', type: 'data', phase: 'Sprint Planning',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  DO_SprintGoal: {
+    title: 'Sprint Goal (Data Object)',
+    desc: 'A concise, single-sentence artefact produced during Sprint Planning that captures the sprint\'s primary objective. It gives the team focus and flexibility while providing stakeholders with a meaningful milestone to inspect at Sprint Review.',
+    color: 'text-violet-400', type: 'data', phase: 'Sprint Planning',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  DO_DoD: {
+    title: 'Definition of Done (Data Object)',
+    desc: 'A shared, team-agreed quality checklist that every increment must satisfy before it can be declared "Done" — covering coding standards, test coverage thresholds, peer review sign-off, and documentation. The DoD makes the Sprint Review meaningful by ensuring inspected work is truly complete.',
+    color: 'text-pink-400', type: 'data', phase: 'Development',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
 }
 
 const groups = [
-  { label: 'Backlog Preparation', color: 'text-blue-400',   ids: ['SE_Start','T_Vision','T_Stories','T_Estimate','T_Prioritize','GW_Backlog','T_AddStories'] },
-  { label: 'Sprint Planning',     color: 'text-violet-400', ids: ['T_SprintPlan','T_Goal','T_SelectItems','T_SprintBacklog','GW_Capacity','T_AdjustScope'] },
+  { label: 'Backlog Preparation', color: 'text-blue-400',   ids: ['SE_Start','T_Vision','T_Stories','T_Estimate','T_Prioritize','GW_Backlog','T_AddStories','DS_ProductBacklog'] },
+  { label: 'Sprint Planning',     color: 'text-violet-400', ids: ['T_SprintPlan','TB_SprintPlan','T_Goal','T_SelectItems','T_SprintBacklog','GW_Capacity','T_AdjustScope','DO_SprintGoal','DO_SprintBacklog'] },
   { label: 'Daily Scrum Loop',    color: 'text-yellow-400', ids: ['T_DailyScrum','GW_Impediment','T_RemImpediment'] },
-  { label: 'Development',         color: 'text-cyan-400',   ids: ['T_Dev','T_CodeReview','GW_Quality','T_FixIssues'] },
+  { label: 'Development',         color: 'text-cyan-400',   ids: ['T_Dev','TB_SprintDeadline','T_CodeReview','GW_Quality','T_FixIssues','DO_DoD'] },
   { label: 'Testing',             color: 'text-pink-400',   ids: ['T_Testing','GW_Tests','T_FixDefects','GW_SprintDone'] },
   { label: 'Sprint Review',       color: 'text-indigo-400', ids: ['T_PrepDemo','T_SprintReview','T_Feedback','GW_Accepted','T_UpdateBacklog'] },
   { label: 'Retrospective',       color: 'text-emerald-400',ids: ['T_Retro','T_Improve','T_UpdateProcess'] },
-  { label: 'Release',             color: 'text-amber-400',  ids: ['GW_Release','T_Deploy','T_Monitor','GW_MoreSprints','EE_Released'] },
+  { label: 'Release',             color: 'text-amber-400',  ids: ['GW_Release','T_Deploy','EB_Deploy','T_Rollback','T_Monitor','GW_MoreSprints','EE_Released'] },
 ]
 
 function NodeTypeIcon({ type, color, size = 14 }) {
   if (type === 'gateway') return <GitBranch size={size} className={color} />
   if (type === 'event')   return <Circle    size={size} className={color} />
+  if (type === 'data')    return <Database  size={size} className={color} />
   return <Play size={size} className={color} />
 }
 
@@ -585,7 +642,7 @@ export default function BpmnViewer() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Header
         title="BPMN Process Viewer"
-        subtitle="Gamified Scrum framework — 35 nodes · 8 decision gateways · XP system integrated"
+        subtitle="Gamified Scrum framework — 3 timer/error boundary events · 4 data objects · 8 gateways · XP system"
       />
 
       <main className="flex-1 p-4 lg:p-6 flex flex-col gap-3 overflow-hidden min-h-0">

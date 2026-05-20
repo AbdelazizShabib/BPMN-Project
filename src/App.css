@@ -161,6 +161,9 @@
   }
 }
 
+/* Hide bpmn.io watermark */
+.bjs-powered-by { display: none !important; }
+
 .ticks {
   position: relative;
   width: 100%;
