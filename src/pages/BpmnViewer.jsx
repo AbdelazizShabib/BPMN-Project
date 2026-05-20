@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import BpmnNavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
+import TokenSimulationModule from 'bpmn-js-token-simulation'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-js.css'
+import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
 import { SCRUM_BPMN } from '../data/scrumBpmn'
 import Header from '../components/layout/Header'
 import {
@@ -412,6 +414,54 @@ const NODE_INFO = {
     color: 'text-pink-400', type: 'data', phase: 'Development',
     xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
   },
+
+  // ── CI/CD Pipeline ───────────────────────────────────────────────────────────
+  SE_CI_Start: {
+    title: 'Deploy Request Received',
+    desc: 'A message start event that fires when the Development Team triggers a production deployment. The CI/CD pipeline receives this message and begins its automated build and validation sequence.',
+    color: 'text-green-400', type: 'event', phase: 'CI/CD Pipeline',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  T_CI_Build: {
+    title: 'Build & Package',
+    desc: 'The pipeline compiles source code, resolves dependencies, runs static analysis, and packages the application artifact. A failed build immediately stops the pipeline and notifies the team — no broken code ever reaches the test stage.',
+    color: 'text-green-400', type: 'task', phase: 'CI/CD Pipeline',
+    xpReward: null,
+    gamification: 'Build speed and stability metrics feed the team\'s Deployment Champion XP — consistently fast, clean builds earn a pipeline efficiency bonus.',
+    achievement: null, behavioralEffect: null, risk: null,
+  },
+  T_CI_Test: {
+    title: 'Run Smoke Tests',
+    desc: 'The packaged artifact is deployed to a staging environment and a suite of smoke tests verifies critical user journeys. These automated tests act as the last automated quality gate before production.',
+    color: 'text-green-400', type: 'task', phase: 'CI/CD Pipeline',
+    xpReward: null,
+    gamification: 'Zero-rollback achievement requires all smoke tests to pass for 72 hours post-release — pipeline test quality directly affects team XP eligibility.',
+    achievement: null, behavioralEffect: null, risk: null,
+  },
+  GW_CI: {
+    title: 'Tests Pass?',
+    desc: 'Exclusive gateway evaluating smoke test results. A passing result sends a "Deploy Success" message to the monitoring task. A failure sends a "Deploy Failure" message back to the Scrum team, triggering the rollback path.',
+    color: 'text-orange-400', type: 'gateway', phase: 'CI/CD Pipeline',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  T_CI_Notify: {
+    title: 'Notify Deploy Success',
+    desc: 'The pipeline sends a "Deploy Success" message to the Scrum team\'s Monitor & Validate Release task. This closes the deployment loop — the team now begins active production monitoring knowing the pipeline validated the release.',
+    color: 'text-green-400', type: 'task', phase: 'CI/CD Pipeline',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  EE_CI_Fail: {
+    title: 'Notify Failure',
+    desc: 'Error end event triggered when smoke tests fail. The pipeline publishes a "Deploy Failure" message to the Scrum team, which causes the rollback path to activate. The failure event also carries structured diagnostic data for the incident post-mortem.',
+    color: 'text-red-400', type: 'event', phase: 'CI/CD Pipeline',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
+  EE_CI_Done: {
+    title: 'Pipeline Complete',
+    desc: 'Normal end event signalling the CI/CD pipeline has finished successfully. The artifact is live in production and the success notification has been dispatched to the Scrum team for post-release monitoring.',
+    color: 'text-green-400', type: 'event', phase: 'CI/CD Pipeline',
+    xpReward: null, gamification: null, achievement: null, behavioralEffect: null, risk: null,
+  },
 }
 
 const groups = [
@@ -423,7 +473,37 @@ const groups = [
   { label: 'Sprint Review',       color: 'text-indigo-400', ids: ['T_PrepDemo','T_SprintReview','T_Feedback','GW_Accepted','T_UpdateBacklog'] },
   { label: 'Retrospective',       color: 'text-emerald-400',ids: ['T_Retro','T_Improve','T_UpdateProcess'] },
   { label: 'Release',             color: 'text-amber-400',  ids: ['GW_Release','T_Deploy','EB_Deploy','T_Rollback','T_Monitor','GW_MoreSprints','EE_Released'] },
+  { label: 'CI/CD Pipeline',     color: 'text-green-400',  ids: ['SE_CI_Start','T_CI_Build','T_CI_Test','GW_CI','T_CI_Notify','EE_CI_Done','EE_CI_Fail'] },
 ]
+
+const PHASE_COLORS = {
+  'Backlog Preparation': { fill: '#0d2240', stroke: '#60a5fa' },
+  'Sprint Planning':     { fill: '#1a1040', stroke: '#a78bfa' },
+  'Daily Scrum':         { fill: '#2d2200', stroke: '#facc15' },
+  'Development':         { fill: '#041f2e', stroke: '#22d3ee' },
+  'Testing':             { fill: '#2d0f1e', stroke: '#f472b6' },
+  'Sprint Review':       { fill: '#0f0f30', stroke: '#818cf8' },
+  'Retrospective':       { fill: '#041f14', stroke: '#34d399' },
+  'Release':             { fill: '#2d1600', stroke: '#fbbf24' },
+  'CI/CD Pipeline':      { fill: '#0a2010', stroke: '#4ade80' },
+}
+
+function applyPhaseColors(viewer) {
+  const reg = viewer.get?.('elementRegistry')
+  if (!reg) return
+  Object.entries(NODE_INFO).forEach(([id, info]) => {
+    if (!info.phase) return
+    const c = PHASE_COLORS[info.phase]
+    if (!c) return
+    const gfx = reg.getGraphics(id)
+    if (!gfx) return
+    const shape = gfx.querySelector('.djs-visual rect, .djs-visual polygon, .djs-visual circle')
+    if (!shape) return
+    shape.style.fill   = c.fill
+    shape.style.stroke = c.stroke
+    shape.style.strokeWidth = '2'
+  })
+}
 
 function NodeTypeIcon({ type, color, size = 14 }) {
   if (type === 'gateway') return <GitBranch size={size} className={color} />
@@ -524,6 +604,7 @@ export default function BpmnViewer() {
     const viewer = new BpmnNavigatedViewer({
       container: containerRef.current,
       keyboard: { bindTo: document },
+      additionalModules: [TokenSimulationModule],
     })
     modelerRef.current = viewer
 
@@ -531,6 +612,7 @@ export default function BpmnViewer() {
       if (destroyed) return
       const canvas = viewer.get('canvas')
       reorderSvgLayers()
+      applyPhaseColors(viewer)
       setLoading(false)
 
       viewer.get('eventBus').on('element.click', ({ element }) => {
@@ -603,6 +685,7 @@ export default function BpmnViewer() {
   const fitView = () => modelerRef.current?.get('canvas')?.zoom('fit-viewport', 'auto')
   const reset   = () => modelerRef.current?.importXML(SCRUM_BPMN).then(() => {
     reorderSvgLayers()
+    applyPhaseColors(modelerRef.current)
     requestAnimationFrame(() => requestAnimationFrame(() => fitView()))
   })
   const toggleFullscreen = () => {
@@ -642,7 +725,7 @@ export default function BpmnViewer() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Header
         title="BPMN Process Viewer"
-        subtitle="Gamified Scrum framework — 3 timer/error boundary events · 4 data objects · 8 gateways · XP system"
+        subtitle="Gamified Scrum framework — 3 pools · boundary events · data objects · CI/CD pipeline · token simulation"
       />
 
       <main className="flex-1 p-4 lg:p-6 flex flex-col gap-3 overflow-hidden min-h-0">

@@ -6,11 +6,15 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
              targetNamespace="http://scrum-bpmn.example">
 
   <collaboration id="Collab_Scrum">
-    <participant id="Pool_Scrum" name="Scrum Framework Process" processRef="ScrumProcess"/>
-    <participant id="Pool_Stakeholders" name="Stakeholders / Customers"/>
-    <messageFlow id="MF_Review"   name="Sprint Demo"    sourceRef="T_SprintReview"    targetRef="Pool_Stakeholders"/>
-    <messageFlow id="MF_Feedback" name="Feedback"       sourceRef="Pool_Stakeholders" targetRef="T_Feedback"/>
-    <messageFlow id="MF_Deploy"   name="Release Notice" sourceRef="T_Deploy"          targetRef="Pool_Stakeholders"/>
+    <participant id="Pool_Scrum"         name="Scrum Framework Process" processRef="ScrumProcess"/>
+    <participant id="Pool_Stakeholders"  name="Stakeholders / Customers"/>
+    <participant id="Pool_CICD"          name="CI/CD Pipeline"          processRef="CICDProcess"/>
+    <messageFlow id="MF_Review"    name="Sprint Demo"        sourceRef="T_SprintReview" targetRef="Pool_Stakeholders"/>
+    <messageFlow id="MF_Feedback"  name="Feedback"           sourceRef="Pool_Stakeholders" targetRef="T_Feedback"/>
+    <messageFlow id="MF_Deploy"    name="Release Notice"     sourceRef="T_Deploy"       targetRef="Pool_Stakeholders"/>
+    <messageFlow id="MF_CI_Trig"   name="Deploy Trigger"     sourceRef="T_Deploy"       targetRef="SE_CI_Start"/>
+    <messageFlow id="MF_CI_OK"     name="Deploy Success"     sourceRef="T_CI_Notify"    targetRef="T_Monitor"/>
+    <messageFlow id="MF_CI_Fail"   name="Deploy Failure"     sourceRef="EE_CI_Fail"     targetRef="T_Rollback"/>
   </collaboration>
 
   <process id="ScrumProcess" name="Scrum Framework" isExecutable="true">
@@ -193,6 +197,26 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
     <sequenceFlow id="F_TB_SD" sourceRef="TB_SprintDeadline" targetRef="T_PrepDemo"/>
     <sequenceFlow id="F_EB1"   sourceRef="EB_Deploy"         targetRef="T_Rollback"/>
     <sequenceFlow id="F_EB2"   sourceRef="T_Rollback"        targetRef="T_Monitor"/>
+  </process>
+
+  <!-- ══ CI/CD PIPELINE PROCESS ══ -->
+  <process id="CICDProcess" name="CI/CD Pipeline" isExecutable="false">
+    <startEvent id="SE_CI_Start" name="Deploy&#10;Request">
+      <outgoing>F_CI_01</outgoing>
+      <messageEventDefinition id="MED_CI_Start"/>
+    </startEvent>
+    <task id="T_CI_Build"  name="Build &amp;&#10;Package">  <incoming>F_CI_01</incoming><outgoing>F_CI_02</outgoing></task>
+    <task id="T_CI_Test"   name="Run Smoke&#10;Tests">      <incoming>F_CI_02</incoming><outgoing>F_CI_03</outgoing></task>
+    <exclusiveGateway id="GW_CI" name="Tests&#10;Pass?">    <incoming>F_CI_03</incoming><outgoing>F_CI_OK</outgoing><outgoing>F_CI_FAIL</outgoing></exclusiveGateway>
+    <task id="T_CI_Notify" name="Notify&#10;Deploy Success"><incoming>F_CI_OK</incoming><outgoing>F_CI_04</outgoing></task>
+    <endEvent id="EE_CI_Done" name="Pipeline&#10;Complete">  <incoming>F_CI_04</incoming></endEvent>
+    <endEvent id="EE_CI_Fail" name="Notify&#10;Failure">     <incoming>F_CI_FAIL</incoming><errorEventDefinition id="EED_CI"/></endEvent>
+    <sequenceFlow id="F_CI_01"  sourceRef="SE_CI_Start" targetRef="T_CI_Build"/>
+    <sequenceFlow id="F_CI_02"  sourceRef="T_CI_Build"  targetRef="T_CI_Test"/>
+    <sequenceFlow id="F_CI_03"  sourceRef="T_CI_Test"   targetRef="GW_CI"/>
+    <sequenceFlow id="F_CI_OK"  name="Yes" sourceRef="GW_CI"       targetRef="T_CI_Notify"/>
+    <sequenceFlow id="F_CI_FAIL" name="No" sourceRef="GW_CI"       targetRef="EE_CI_Fail"/>
+    <sequenceFlow id="F_CI_04"  sourceRef="T_CI_Notify" targetRef="EE_CI_Done"/>
   </process>
 
   <bpmndi:BPMNDiagram id="Diagram_1">
@@ -550,6 +574,59 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
         <dc:Bounds x="80" y="820" width="4120" height="100"/>
       </bpmndi:BPMNShape>
 
+      <!-- ── CI/CD PIPELINE POOL (below Stakeholders) ── -->
+      <bpmndi:BPMNShape id="Pool_CICD_di" bpmnElement="Pool_CICD" isHorizontal="true">
+        <dc:Bounds x="80" y="940" width="4120" height="130"/>
+      </bpmndi:BPMNShape>
+      <!-- CI/CD elements — clustered near the Release phase (right side) -->
+      <bpmndi:BPMNShape id="SE_CI_Start_di" bpmnElement="SE_CI_Start">
+        <dc:Bounds x="3622" y="990" width="30" height="30"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3602" y="1025" width="70" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_CI_Build_di" bpmnElement="T_CI_Build">
+        <dc:Bounds x="3682" y="975" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_CI_Test_di" bpmnElement="T_CI_Test">
+        <dc:Bounds x="3812" y="975" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_CI_di" bpmnElement="GW_CI" isMarkerVisible="true">
+        <dc:Bounds x="3972" y="983" width="44" height="44"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3958" y="953" width="66" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_CI_Notify_di" bpmnElement="T_CI_Notify">
+        <dc:Bounds x="4046" y="975" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EE_CI_Done_di" bpmnElement="EE_CI_Done">
+        <dc:Bounds x="3994" y="1050" width="30" height="30"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3972" y="1085" width="74" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EE_CI_Fail_di" bpmnElement="EE_CI_Fail">
+        <dc:Bounds x="4164" y="990" width="30" height="30"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="4148" y="1025" width="62" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- CI/CD sequence flow edges -->
+      <bpmndi:BPMNEdge id="F_CI_01_di" bpmnElement="F_CI_01">
+        <di:waypoint x="3652" y="1005"/><di:waypoint x="3682" y="1005"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_CI_02_di" bpmnElement="F_CI_02">
+        <di:waypoint x="3782" y="1005"/><di:waypoint x="3812" y="1005"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_CI_03_di" bpmnElement="F_CI_03">
+        <di:waypoint x="3912" y="1005"/><di:waypoint x="3972" y="1005"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_CI_OK_di" bpmnElement="F_CI_OK">
+        <di:waypoint x="4016" y="1005"/><di:waypoint x="4046" y="1005"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="4023" y="987" width="20" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_CI_FAIL_di" bpmnElement="F_CI_FAIL">
+        <di:waypoint x="3994" y="1027"/><di:waypoint x="3994" y="1050"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3999" y="1036" width="15" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_CI_04_di" bpmnElement="F_CI_04">
+        <di:waypoint x="4146" y="1005"/><di:waypoint x="4164" y="1005"/>
+      </bpmndi:BPMNEdge>
+
       <!-- ══════════════ MESSAGE FLOWS ══════════════ -->
 
       <!-- T_SprintReview → Stakeholders: Sprint Demo (vertical, bottom of SM task → pool top) -->
@@ -572,6 +649,35 @@ export const SCRUM_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
         <di:waypoint x="3720" y="675"/>
         <di:waypoint x="3720" y="820"/>
         <bpmndi:BPMNLabel><dc:Bounds x="3728" y="741" width="76" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- T_Deploy → SE_CI_Start: Deploy Trigger (down through Stakeholders pool → CI/CD pool) -->
+      <bpmndi:BPMNEdge id="MF_CI_Trig_di" bpmnElement="MF_CI_Trig">
+        <di:waypoint x="3750" y="675"/>
+        <di:waypoint x="3750" y="940"/>
+        <di:waypoint x="3637" y="940"/>
+        <di:waypoint x="3637" y="990"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3758" y="800" width="74" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- T_CI_Notify → T_Monitor: Deploy Success (up from CI/CD to Dev lane) -->
+      <bpmndi:BPMNEdge id="MF_CI_OK_di" bpmnElement="MF_CI_OK">
+        <di:waypoint x="4096" y="975"/>
+        <di:waypoint x="4096" y="940"/>
+        <di:waypoint x="3860" y="940"/>
+        <di:waypoint x="3860" y="820"/>
+        <di:waypoint x="3860" y="675"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3970" y="922" width="74" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <!-- EE_CI_Fail → T_Rollback: Deploy Failure notification -->
+      <bpmndi:BPMNEdge id="MF_CI_Fail_di" bpmnElement="MF_CI_Fail">
+        <di:waypoint x="4179" y="990"/>
+        <di:waypoint x="4179" y="940"/>
+        <di:waypoint x="3720" y="940"/>
+        <di:waypoint x="3720" y="820"/>
+        <di:waypoint x="3720" y="760"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="3940" y="922" width="74" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
       <!-- ══ BOUNDARY EVENT SHAPES ══ -->
