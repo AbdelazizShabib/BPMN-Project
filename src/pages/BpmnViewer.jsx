@@ -1079,6 +1079,83 @@ export default function BpmnViewer() {
     applyPhaseFilter(next)
   }
 
+  // Touch support: single-finger pan, two-finger pinch-to-zoom
+  useEffect(() => {
+    const el = canvasWrapRef.current
+    if (!el) return
+
+    let lastTouches = null
+    let lastDist = null
+    let startX = 0
+    let startY = 0
+    let moved = false
+
+    const dist = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX
+      const dy = t1.clientY - t2.clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    }
+
+    const onTouchStart = (e) => {
+      lastTouches = Array.from(e.touches)
+      lastDist = e.touches.length === 2 ? dist(e.touches[0], e.touches[1]) : null
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      moved = false
+    }
+
+    const onTouchMove = (e) => {
+      const canvas = modelerRef.current?.get('canvas')
+      if (!canvas || !lastTouches) return
+      const touches = Array.from(e.touches)
+
+      if (touches.length === 1 && lastTouches.length === 1) {
+        const dx = touches[0].clientX - startX
+        const dy = touches[0].clientY - startY
+        if (!moved && Math.sqrt(dx * dx + dy * dy) < 8) return
+        moved = true
+        e.preventDefault()
+        canvas.scroll({
+          dx: touches[0].clientX - lastTouches[0].clientX,
+          dy: touches[0].clientY - lastTouches[0].clientY,
+        })
+      } else if (touches.length === 2) {
+        moved = true
+        e.preventDefault()
+        const newDist = dist(touches[0], touches[1])
+        if (lastDist && lastDist > 0) {
+          const scale = newDist / lastDist
+          const midX = (touches[0].clientX + touches[1].clientX) / 2
+          const midY = (touches[0].clientY + touches[1].clientY) / 2
+          const rect = el.getBoundingClientRect()
+          const vb = canvas.viewbox()
+          canvas.zoom(canvas.zoom() * scale, {
+            x: vb.x + (midX - rect.left) / vb.scale,
+            y: vb.y + (midY - rect.top) / vb.scale,
+          })
+        }
+        lastDist = newDist
+      }
+
+      lastTouches = touches
+    }
+
+    const onTouchEnd = (e) => {
+      lastTouches = Array.from(e.touches)
+      lastDist = e.touches.length === 2 ? dist(e.touches[0], e.touches[1]) : null
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [])
+
   // Keyboard navigation: arrows follow sequence flows; Tab cycles WALK_SEQUENCE
   useEffect(() => {
     if (!selectedNode) return
@@ -1171,7 +1248,7 @@ export default function BpmnViewer() {
               </div>
             )}
 
-            <div ref={containerRef} className="bpmn-container absolute inset-0 w-full h-full" />
+            <div ref={containerRef} className="bpmn-container absolute inset-0 w-full h-full" style={{ touchAction: 'none' }} />
 
             {/* Controls */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
