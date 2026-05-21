@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import Header from '../components/layout/Header'
-import { BarChart3, TrendingUp, Bug, CheckCircle2, Zap, AlertTriangle, Users, Target, Info } from 'lucide-react'
+import { BarChart3, TrendingUp, Bug, CheckCircle2, Zap, AlertTriangle, Users, Target, Info, Brain } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -93,6 +94,14 @@ const RISK_COLORS = {
   high:   { label: 'High Risk',   bar: 'bg-red-500',    text: 'text-red-400',    border: 'border-red-800/40',    bg: 'bg-red-900/20'   },
 }
 
+const OCEAN_LIST = [
+  { key: 'O', name: 'Openness',          color: '#7c3aed', coverage: 72 },
+  { key: 'C', name: 'Conscientiousness', color: '#3b82f6', coverage: 92 },
+  { key: 'E', name: 'Extraversion',      color: '#f59e0b', coverage: 78 },
+  { key: 'A', name: 'Agreeableness',     color: '#10b981', coverage: 75 },
+  { key: 'N', name: 'Neuroticism',       color: '#f43f5e', coverage: 40 },
+]
+
 function ChartCard({ title, subtitle, icon: Icon, children, className = '' }) {
   return (
     <div className={`bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 ${className}`}>
@@ -110,6 +119,19 @@ function ChartCard({ title, subtitle, icon: Icon, children, className = '' }) {
 
 export default function Analytics() {
   const { sprintHistory, teamMembers } = useStore()
+
+  const [teamProfile, setTeamProfile] = useState({ O: 60, C: 75, E: 65, A: 70, N: 70 })
+
+  const oceanRadarData = OCEAN_LIST.map(t => ({ trait: t.name, score: teamProfile[t.key], fullMark: 100 }))
+  const fitData = OCEAN_LIST.map(t => ({ name: t.name, need: teamProfile[t.key], coverage: t.coverage, color: t.color }))
+  // Per-trait utilization: min(need, coverage) / coverage — anchored to coverage so zero-need traits pull score down
+  const overallFit = Math.round(
+    OCEAN_LIST.reduce((sum, t) => sum + Math.min(teamProfile[t.key], t.coverage) / t.coverage, 0) / OCEAN_LIST.length * 100
+  )
+  const fitLabel = overallFit >= 80 ? 'Excellent — mechanics well-utilized across all personality types'
+    : overallFit >= 65 ? 'Good — most personality needs are broadly covered'
+    : overallFit >= 50 ? 'Moderate — several traits have low team need or coverage gaps'
+    : 'Low — personality-mechanic match is sparse across trait types'
 
   const avgVelocity   = Math.round(sprintHistory.reduce((s, sp) => s + sp.completed, 0) / sprintHistory.length)
   const avgCompletion = Math.round(sprintHistory.reduce((s, sp) => s + (sp.completed / sp.planned) * 100, 0) / sprintHistory.length)
@@ -374,6 +396,103 @@ export default function Analytics() {
               <Link to="/risks" className="text-amber-400 hover:text-amber-300 ml-1 underline underline-offset-2">Learn more about gamification risks →</Link>
             </p>
           </div>
+        </div>
+
+        {/* ── OCEAN PERSONALITY FIT ANALYSIS ──────────────────────────────────── */}
+        <div className="flex items-center gap-2 pt-2">
+          <Brain size={16} className="text-violet-400" />
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">OCEAN Personality Fit Analysis</h2>
+          <div className="flex-1 h-px bg-slate-700/50" />
+          <span className="text-xs text-slate-500">Drag sliders to model your team</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ChartCard title="Team Personality Composition" subtitle="Set average OCEAN scores for your team">
+            <div className="space-y-5">
+              {OCEAN_LIST.map(t => (
+                <div key={t.key}>
+                  <div className="flex justify-between text-xs mb-2">
+                    <span style={{ color: t.color }} className="font-semibold">{t.key} · {t.name}</span>
+                    <span className="text-slate-400">{teamProfile[t.key]}/100</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={teamProfile[t.key]}
+                    onChange={e => setTeamProfile(prev => ({ ...prev, [t.key]: Number(e.target.value) }))}
+                    className="w-full cursor-pointer"
+                    style={{ accentColor: t.color }}
+                  />
+                  <div className="flex justify-between text-xs text-slate-700 mt-0.5">
+                    <span>Low</span>
+                    <span className="text-slate-600">{t.coverage}% mechanic coverage</span>
+                    <span>High</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+
+          <ChartCard title="Team OCEAN Profile" subtitle="Radar view of current team composition">
+            <ResponsiveContainer width="100%" height={280}>
+              <RadarChart data={oceanRadarData}>
+                <PolarGrid stroke="#334155" />
+                <PolarAngleAxis
+                  dataKey="trait"
+                  tick={({ x, y, payload }) => {
+                    const t = OCEAN_LIST.find(t => t.name === payload.value)
+                    return (
+                      <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
+                        fontSize={11} fontWeight="600" fill={t?.color || '#94a3b8'}>
+                        {payload.value}
+                      </text>
+                    )
+                  }}
+                />
+                <Radar dataKey="score" stroke="#7c3aed" fill="#7c3aed" fillOpacity={0.2} strokeWidth={2} dot={{ fill: '#7c3aed', r: 4 }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <ChartCard title="Gamification Fit Score" subtitle="How well mechanics serve this team">
+            <div className="text-center py-4">
+              <p className={`text-5xl font-black ${overallFit >= 80 ? 'text-green-400' : overallFit >= 65 ? 'text-yellow-400' : 'text-red-400'}`}>
+                {overallFit}%
+              </p>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">{fitLabel}</p>
+              <div className="mt-4 h-3 rounded-full bg-slate-700 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${overallFit >= 80 ? 'bg-green-500' : overallFit >= 65 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${overallFit}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-600 mt-3 leading-relaxed">
+                Average utilization of each trait's mechanics given team needs. Traits with no team need contribute 0, not 100.
+              </p>
+            </div>
+          </ChartCard>
+
+          <ChartCard className="lg:col-span-2" title="Team Need vs Mechanic Coverage" subtitle="Gaps reveal underserved personality types">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={fitData} layout="vertical" barGap={4} barCategoryGap="28%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} unit="%" />
+                <YAxis dataKey="name" type="category" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={100} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+                <Bar dataKey="need" name="Team Need" radius={[0, 4, 4, 0]}>
+                  {fitData.map((entry, i) => <Cell key={i} fill={entry.color} fillOpacity={0.85} />)}
+                </Bar>
+                <Bar dataKey="coverage" name="Mechanic Coverage" fill="#334155" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <p className="text-xs text-slate-500 mt-2">
+              Where Team Need exceeds Coverage, the design leaves that type underserved. Neuroticism (N) is typically the widest gap — stress-sensitive mechanics are underrepresented in most gamification designs.
+            </p>
+          </ChartCard>
         </div>
 
         {/* Performance Heatmap */}

@@ -1,10 +1,19 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import Header from '../components/layout/Header'
 import {
   Trophy, Zap, Shield, Clock, Users, Flame, Star, Lock,
   TrendingUp, Target, GitMerge, MessageSquare, Search, Rocket,
-  CheckCircle2, BarChart3,
+  CheckCircle2, BarChart3, Brain,
 } from 'lucide-react'
+
+const OCEAN_COLORS = {
+  O: '#7c3aed', C: '#3b82f6', E: '#f59e0b', A: '#10b981', N: '#f43f5e',
+}
+const OCEAN_NAMES = {
+  O: 'Openness', C: 'Conscientiousness', E: 'Extraversion', A: 'Agreeableness', N: 'Neuroticism',
+}
 
 const BADGES = [
   {
@@ -19,6 +28,7 @@ const BADGES = [
     scrumActivity: 'Sprint Execution',
     unlockCondition: 'Complete 100% of sprint tasks within the sprint window.',
     motivationalPurpose: 'Reinforces full commitment to sprint goals and accountability to the team.',
+    oceanTraits: ['C'],
   },
   {
     id: 'bug_hunter',
@@ -32,6 +42,7 @@ const BADGES = [
     scrumActivity: 'Testing & Quality',
     unlockCondition: 'Fix 10 or more bugs in one sprint cycle.',
     motivationalPurpose: 'Makes debugging a celebrated activity, reducing the stigma of defect-fixing work.',
+    oceanTraits: ['C', 'N'],
   },
   {
     id: 'deadline_master',
@@ -45,6 +56,7 @@ const BADGES = [
     scrumActivity: 'Backlog Grooming & Sprint Planning',
     unlockCondition: 'Sprint actual velocity within 15% of estimate for 2 consecutive sprints.',
     motivationalPurpose: 'Encourages investment in estimation skill and team velocity calibration.',
+    oceanTraits: ['C'],
   },
   {
     id: 'team_player',
@@ -58,6 +70,7 @@ const BADGES = [
     scrumActivity: 'Daily Scrum & Collaboration',
     unlockCondition: 'Formally assist (pair, review, unblock) at least 3 teammates in one sprint.',
     motivationalPurpose: 'Counters individual competition by rewarding collaborative behaviour.',
+    oceanTraits: ['A', 'E'],
   },
   {
     id: 'streak_champion',
@@ -71,6 +84,7 @@ const BADGES = [
     scrumActivity: 'Daily Scrum',
     unlockCondition: '10 consecutive Daily Scrum attendances with substantive updates (no "nothing to report").',
     motivationalPurpose: 'Builds the habit of daily communication and transparency within the team.',
+    oceanTraits: ['E', 'C'],
   },
   {
     id: 'productivity',
@@ -84,6 +98,7 @@ const BADGES = [
     scrumActivity: 'Sprint Execution & Development',
     unlockCondition: 'Complete 120%+ of planned story points with zero critical defects found post-sprint.',
     motivationalPurpose: 'Rewards high-performance sprints while quality gate prevents gaming through rushed work.',
+    oceanTraits: ['C', 'O'],
   },
   {
     id: 'review_champion',
@@ -97,6 +112,7 @@ const BADGES = [
     scrumActivity: 'Code Review & Development',
     unlockCondition: '10+ code reviews with substantive comments (at least 3 comments per review on average).',
     motivationalPurpose: 'Makes code review a valued, recognised contribution rather than an interruption.',
+    oceanTraits: ['A', 'E'],
   },
   {
     id: 'retro_master',
@@ -110,6 +126,7 @@ const BADGES = [
     scrumActivity: 'Sprint Retrospective',
     unlockCondition: 'Identify 3+ retrospective action items that are implemented and verified in the following sprint.',
     motivationalPurpose: 'Creates accountability for retro follow-through, turning reflection into measurable improvement.',
+    oceanTraits: ['E', 'A', 'O'],
   },
   {
     id: 'backlog_guru',
@@ -123,6 +140,7 @@ const BADGES = [
     scrumActivity: 'Backlog Preparation & Grooming',
     unlockCondition: '20+ backlog items refined with acceptance criteria, estimates, and priority in a single sprint cycle.',
     motivationalPurpose: 'Incentivises proactive backlog health rather than reactive last-minute grooming before planning.',
+    oceanTraits: ['C', 'O'],
   },
   {
     id: 'deployment_champion',
@@ -136,6 +154,7 @@ const BADGES = [
     scrumActivity: 'Release & Deployment',
     unlockCondition: 'Production deployment with no rollbacks, hotfixes, or P1 incidents within 72 hours post-release.',
     motivationalPurpose: 'Makes deployment a celebrated team milestone, building a culture of confident, stable releases.',
+    oceanTraits: ['C', 'O'],
   },
   {
     id: 'consistency_king',
@@ -149,6 +168,7 @@ const BADGES = [
     scrumActivity: 'Retrospective & Continuous Improvement',
     unlockCondition: 'Retro-identified improvements implemented and verified for 4 consecutive sprints.',
     motivationalPurpose: 'Rewards sustained cultural change over time rather than one-off process improvements.',
+    oceanTraits: ['C'],
   },
   {
     id: 'analytics_ace',
@@ -162,6 +182,7 @@ const BADGES = [
     scrumActivity: 'Agile Analytics & Continuous Improvement',
     unlockCondition: 'Present a data-driven sprint retrospective finding with an implemented improvement action.',
     motivationalPurpose: 'Encourages data literacy and evidence-based decision making within the Scrum team.',
+    oceanTraits: ['C', 'O'],
   },
 ]
 
@@ -225,6 +246,24 @@ function BadgeCard({ badge, earned }) {
       <span className={`text-xs px-2 py-0.5 rounded-md border self-start ${getPhaseStyle(badge.scrumActivity)}`}>
         {badge.scrumActivity}
       </span>
+
+      {/* OCEAN trait pills */}
+      <div className="flex gap-1 flex-wrap">
+        {badge.oceanTraits.map(t => (
+          <span
+            key={t}
+            className="text-xs px-1.5 py-0.5 rounded font-bold"
+            style={{
+              backgroundColor: OCEAN_COLORS[t] + '22',
+              border: `1px solid ${OCEAN_COLORS[t]}55`,
+              color: OCEAN_COLORS[t],
+            }}
+            title={OCEAN_NAMES[t]}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
 
       {/* Unlock condition / XP earned */}
       <div className={`text-xs px-2.5 py-1.5 rounded-xl leading-relaxed ${
@@ -301,8 +340,17 @@ function MemberXPCard({ member }) {
   )
 }
 
+const OCEAN_FILTER_LIST = [
+  { key: 'O', name: 'Openness',          color: '#7c3aed' },
+  { key: 'C', name: 'Conscientiousness', color: '#3b82f6' },
+  { key: 'E', name: 'Extraversion',      color: '#f59e0b' },
+  { key: 'A', name: 'Agreeableness',     color: '#10b981' },
+  { key: 'N', name: 'Neuroticism',       color: '#f43f5e' },
+]
+
 export default function Achievements() {
   const { teamMembers, currentUser } = useStore()
+  const [traitFilter, setTraitFilter] = useState(null)
   const currentLevelData = LEVELS.find(l => l.level === currentUser.level) || LEVELS[0]
   const nextLevelData = LEVELS.find(l => l.level === currentUser.level + 1)
   const progressToNext = nextLevelData
@@ -379,10 +427,47 @@ export default function Achievements() {
             <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
               <Trophy size={16} className="text-yellow-400" />
               Scrum Achievement Badges
-              <span className="text-xs text-slate-500">({currentUser.badges.length}/{BADGES.length} earned)</span>
+              <span className="text-xs text-slate-500">
+                ({traitFilter
+                  ? `${BADGES.filter(b => b.oceanTraits.includes(traitFilter)).length} matching`
+                  : `${currentUser.badges.length}/${BADGES.length} earned`
+                })
+              </span>
             </h3>
+
+            {/* OCEAN trait filter */}
+            <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+              <Brain size={13} className="text-slate-400 flex-shrink-0" />
+              <button
+                onClick={() => setTraitFilter(null)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                  !traitFilter
+                    ? 'bg-slate-600 border-slate-500 text-white'
+                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
+                }`}
+              >
+                All
+              </button>
+              {OCEAN_FILTER_LIST.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTraitFilter(prev => prev === t.key ? null : t.key)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border-2 transition-all ${
+                    traitFilter === t.key ? 'text-white border-transparent' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                  style={traitFilter === t.key ? { backgroundColor: t.color, borderColor: t.color } : {}}
+                  title={t.name}
+                >
+                  {t.key} · {t.name}
+                </button>
+              ))}
+              <Link to="/personality" className="ml-auto text-xs text-violet-400 hover:text-violet-300 transition-colors whitespace-nowrap">
+                Take the OCEAN quiz →
+              </Link>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {BADGES.map(badge => (
+              {(traitFilter ? BADGES.filter(b => b.oceanTraits.includes(traitFilter)) : BADGES).map(badge => (
                 <BadgeCard key={badge.id} badge={badge} earned={currentUser.badges.includes(badge.id)} />
               ))}
             </div>
