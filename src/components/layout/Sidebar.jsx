@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Kanban, Trophy, BarChart3,
-  GitBranch, Users, Bell, Zap, ChevronRight, Star, X, AlertTriangle, Brain,
+  GitBranch, Users, Bell, Zap, ChevronRight, Star, X, AlertTriangle, Brain, Bot,
 } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 
@@ -14,6 +14,7 @@ const navItems = [
   { to: '/bpmn',        icon: GitBranch,       label: 'BPMN Process' },
   { to: '/risks',       icon: AlertTriangle,   label: 'Risk Analysis'  },
   { to: '/personality', icon: Brain,           label: 'Personality'    },
+  { to: '/bot',         icon: Bot,             label: 'Bot Automation' },
 ]
 
 export default function Sidebar() {

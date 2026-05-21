@@ -3,6 +3,9 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useStore } from '../store/useStore'
 import Header from '../components/layout/Header'
 import { Plus, MoreHorizontal, User, Flag, ChevronRight, Package, RotateCcw, X, Zap, Trophy, Star } from 'lucide-react'
+import { createIssue, moveIssue } from '../services/github'
+import { notifyTaskCreated, notifyTaskMoved } from '../services/discord'
+import { getIssueNumber } from '../services/botConfig'
 
 const PRIORITY_CONFIG = {
   high:   { label: 'High',   color: 'text-red-400 bg-red-900/30 border-red-800/50'            },
@@ -290,13 +293,20 @@ export default function ScrumBoard() {
   const [showBacklog, setShowBacklog] = useState(true)
   const columnOrder = ['todo', 'inprogress', 'testing', 'done']
 
-  const onDragEnd = ({ source, destination, draggableId }) => {
+  const onDragEnd = async ({ source, destination, draggableId }) => {
     if (!destination) return
     if (source.droppableId === destination.droppableId && source.index === destination.index) return
     if (source.droppableId === destination.droppableId) {
       reorderTasksInColumn(source.droppableId, source.index, destination.index)
     } else {
-      moveTask(draggableId, source.droppableId, destination.droppableId)
+      const result = moveTask(draggableId, source.droppableId, destination.droppableId)
+      if (result) {
+        const { task, xpGained } = result
+        const assignee = teamMembers.find(m => m.id === task.assignee)
+        const issueNum = getIssueNumber(task.id)
+        moveIssue(issueNum, destination.droppableId, xpGained)
+        notifyTaskMoved(task, source.droppableId, destination.droppableId, assignee?.name, xpGained)
+      }
     }
   }
 
@@ -310,12 +320,24 @@ export default function ScrumBoard() {
     }
   }
 
-  const handleAddTask = (columnId, taskId) => {
+  const handleAddTask = async (columnId, taskId) => {
     if (columnId === 'todo') {
-      addTaskToSprint(taskId)
+      const sprintTask = addTaskToSprint(taskId)
+      if (sprintTask) {
+        const assignee = teamMembers.find(m => m.id === sprintTask.assignee)
+        const issueNum = await createIssue(sprintTask, assignee?.name)
+        notifyTaskCreated(sprintTask, assignee?.name, issueNum)
+      }
     } else {
       const sourceMap = { inprogress: 'todo', testing: 'inprogress', done: 'testing' }
-      moveTask(taskId, sourceMap[columnId], columnId)
+      const result = moveTask(taskId, sourceMap[columnId], columnId)
+      if (result) {
+        const { task, xpGained } = result
+        const assignee = teamMembers.find(m => m.id === task.assignee)
+        const issueNum = getIssueNumber(task.id)
+        moveIssue(issueNum, columnId, xpGained)
+        notifyTaskMoved(task, sourceMap[columnId], columnId, assignee?.name, xpGained)
+      }
     }
   }
 

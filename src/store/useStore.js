@@ -89,21 +89,21 @@ export const useStore = create((set, get) => ({
   moveTask: (taskId, fromColumn, toColumn) => {
     const { sprint, teamMembers, currentUser } = get()
     const task = sprint.columns[fromColumn]?.tasks.find(t => t.id === taskId)
-    if (!task) return
+    if (!task) return null
 
     let updatedMembers = teamMembers
     let updatedCurrentUser = currentUser
+    let xpGained = 0
 
-    // Award XP when a task is moved to done
     if (toColumn === 'done' && task.assignee) {
-      const xpGain = task.storyPoints * 20 + (task.priority === 'high' ? Math.round(task.storyPoints * 20 * 0.5) : 0)
+      xpGained = task.storyPoints * 20 + (task.priority === 'high' ? Math.round(task.storyPoints * 20 * 0.5) : 0)
       updatedMembers = teamMembers.map(m =>
         m.id === task.assignee
-          ? { ...m, xp: m.xp + xpGain, tasksCompleted: m.tasksCompleted + 1 }
+          ? { ...m, xp: m.xp + xpGained, tasksCompleted: m.tasksCompleted + 1 }
           : m
       )
       if (currentUser.id === task.assignee) {
-        updatedCurrentUser = { ...currentUser, xp: currentUser.xp + xpGain, tasksCompleted: currentUser.tasksCompleted + 1 }
+        updatedCurrentUser = { ...currentUser, xp: currentUser.xp + xpGained, tasksCompleted: currentUser.tasksCompleted + 1 }
       }
     }
 
@@ -119,6 +119,7 @@ export const useStore = create((set, get) => ({
         }
       }
     })
+    return { task, xpGained }
   },
 
   reorderTasksInColumn: (columnId, startIndex, endIndex) => {
@@ -137,7 +138,7 @@ export const useStore = create((set, get) => ({
   addTaskToSprint: (taskId) => {
     const { backlog, sprint, currentUser } = get()
     const task = backlog.find(t => t.id === taskId)
-    if (!task) return
+    if (!task) return null
     const sprintTask = { ...task, id: `t-${Date.now()}`, sprintId: sprint.id, assignee: currentUser.id }
     set({
       backlog: backlog.filter(t => t.id !== taskId),
@@ -149,6 +150,7 @@ export const useStore = create((set, get) => ({
         }
       }
     })
+    return sprintTask
   },
 
   markNotificationRead: (id) => {

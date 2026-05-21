@@ -8,6 +8,7 @@ import Analytics from './pages/Analytics'
 import BpmnViewer from './pages/BpmnViewer'
 import Risks from './pages/Risks'
 import PersonalityProfile from './pages/PersonalityProfile'
+import BotSettings from './pages/BotSettings'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/bpmn" element={<BpmnViewer />} />
           <Route path="/risks" element={<Risks />} />
           <Route path="/personality" element={<PersonalityProfile />} />
+          <Route path="/bot" element={<BotSettings />} />
         </Route>
       </Routes>
     </BrowserRouter>
