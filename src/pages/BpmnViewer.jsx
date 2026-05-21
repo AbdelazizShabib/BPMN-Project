@@ -155,8 +155,9 @@ const BTS_DARK_CSS = `
   .bts-element-notification.success { background: #7c3aed !important; color: #f8fafc !important; }
   .bts-element-notification.warning { background: #dc2626 !important; color: #f8fafc !important; }
 
-  /* Phase filter — dims non-active elements */
-  .djs-element.phase-dim { opacity: 0.08 !important; }
+  /* Phase / trait filters — dim non-matching elements */
+  .djs-element.phase-dim  { opacity: 0.08 !important; }
+  .djs-element.trait-dim  { opacity: 0.08 !important; }
 
   /* Minimap dark theme — repositioned to bottom-right, away from controls */
   .djs-minimap {
@@ -192,6 +193,47 @@ const BTS_DARK_CSS = `
     pointer-events: none;
   }
 `
+
+const OCEAN_TRAIT_MAP = {
+  O: { name: 'Openness',          color: '#7c3aed' },
+  C: { name: 'Conscientiousness', color: '#3b82f6' },
+  E: { name: 'Extraversion',      color: '#f59e0b' },
+  A: { name: 'Agreeableness',     color: '#10b981' },
+  N: { name: 'Neuroticism',       color: '#f43f5e' },
+}
+
+const NODE_TRAITS = {
+  T_Vision:       ['O', 'C'],
+  T_Stories:      ['O', 'C'],
+  T_Estimate:     ['C', 'E'],
+  T_Prioritize:   ['C', 'A'],
+  T_AddStories:   ['O', 'C'],
+  T_SprintPlan:   ['E', 'C'],
+  T_Goal:         ['C', 'E'],
+  T_SelectItems:  ['C', 'A'],
+  T_SprintBacklog:['C'],
+  T_AdjustScope:  ['C', 'N'],
+  T_DailyScrum:   ['E', 'A'],
+  T_RemImpediment:['A', 'E'],
+  T_Dev:          ['O', 'C'],
+  T_CodeReview:   ['A', 'E'],
+  T_FixIssues:    ['C', 'A'],
+  T_Testing:      ['C', 'O'],
+  T_FixDefects:   ['C', 'N'],
+  T_PrepDemo:     ['C', 'E'],
+  T_SprintReview: ['E', 'A'],
+  T_Feedback:     ['A', 'E'],
+  T_UpdateBacklog:['C', 'A'],
+  T_Retro:        ['E', 'A'],
+  T_Improve:      ['O', 'C'],
+  T_UpdateProcess:['C', 'O'],
+  T_Deploy:       ['C', 'O'],
+  T_Rollback:     ['C', 'N'],
+  T_Monitor:      ['C', 'N'],
+  T_CI_Build:     ['C', 'O'],
+  T_CI_Test:      ['C', 'O'],
+  T_CI_Notify:    ['A', 'E'],
+}
 
 // Inject once; lives for the lifetime of the app
 if (!document.getElementById('bts-dark-overrides')) {
@@ -819,6 +861,28 @@ function NodeOverlay({ node, onClose, bottomShift }) {
           <p className="text-xs text-slate-400 leading-relaxed">{node.risk}</p>
         </div>
       )}
+
+      {/* Personality Traits */}
+      {NODE_TRAITS[node.id]?.length > 0 && (
+        <div className="px-4 py-3 border-t border-slate-700/40">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Personality Traits</p>
+          <div className="flex gap-1.5 flex-wrap">
+            {NODE_TRAITS[node.id].map(t => (
+              <span
+                key={t}
+                className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                style={{
+                  backgroundColor: OCEAN_TRAIT_MAP[t]?.color + '22',
+                  border: `1px solid ${OCEAN_TRAIT_MAP[t]?.color}66`,
+                  color: OCEAN_TRAIT_MAP[t]?.color,
+                }}
+              >
+                {t} · {OCEAN_TRAIT_MAP[t]?.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -842,6 +906,7 @@ export default function BpmnViewer() {
   const [walkMode, setWalkMode] = useState(false)
   const [walkIndex, setWalkIndex] = useState(0)
   const [activePhase, setActivePhase] = useState(null)
+  const [activeTrait, setActiveTrait] = useState(null)
   const [hoverNode, setHoverNode] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
@@ -984,6 +1049,7 @@ export default function BpmnViewer() {
     setWalkIndex(0)
     setSelectedNode(null)
     setActivePhase(null)
+    setActiveTrait(null)
     setHoverNode(null)
     requestAnimationFrame(() => requestAnimationFrame(() => fitView()))
   })
@@ -1073,10 +1139,31 @@ export default function BpmnViewer() {
     })
   }
 
+  const applyTraitFilter = (trait) => {
+    const viewer = modelerRef.current
+    if (!viewer) return
+    const canvas = viewer.get('canvas')
+    Object.keys(NODE_INFO).forEach(id => {
+      try {
+        const traits = NODE_TRAITS[id] || []
+        if (!trait || traits.includes(trait)) canvas.removeMarker(id, 'trait-dim')
+        else canvas.addMarker(id, 'trait-dim')
+      } catch (_) {}
+    })
+  }
+
   const togglePhaseFilter = (phase) => {
     const next = activePhase === phase ? null : phase
     setActivePhase(next)
     applyPhaseFilter(next)
+    if (next && activeTrait) { setActiveTrait(null); applyTraitFilter(null) }
+  }
+
+  const toggleTraitFilter = (trait) => {
+    const next = activeTrait === trait ? null : trait
+    setActiveTrait(next)
+    applyTraitFilter(next)
+    if (next && activePhase) { setActivePhase(null); applyPhaseFilter(null) }
   }
 
   // Touch support: single-finger pan, two-finger pinch-to-zoom
@@ -1334,6 +1421,41 @@ export default function BpmnViewer() {
 
           {/* Sidebar */}
           <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-2 overflow-y-auto lg:max-h-full">
+
+            {/* OCEAN Personality Lens */}
+            <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl overflow-hidden flex-shrink-0">
+              <div className="text-xs font-semibold uppercase tracking-wider px-3 py-2 bg-slate-800/60 border-b border-slate-700/40 flex items-center justify-between">
+                <span className="text-slate-400">OCEAN Personality Lens</span>
+                {activeTrait && (
+                  <button onClick={() => toggleTraitFilter(activeTrait)} className="text-slate-500 hover:text-slate-300 transition-colors">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+              <div className="p-2 flex gap-1.5">
+                {Object.entries(OCEAN_TRAIT_MAP).map(([key, { name, color }]) => (
+                  <button
+                    key={key}
+                    onClick={() => toggleTraitFilter(key)}
+                    title={name}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+                      activeTrait === key
+                        ? 'text-white border-transparent'
+                        : 'bg-slate-800 border-slate-600 text-slate-400 hover:text-white hover:border-slate-400'
+                    }`}
+                    style={activeTrait === key ? { backgroundColor: color, borderColor: color } : {}}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+              {activeTrait && (
+                <p className="text-xs text-center pb-2" style={{ color: OCEAN_TRAIT_MAP[activeTrait]?.color }}>
+                  {OCEAN_TRAIT_MAP[activeTrait]?.name} nodes highlighted
+                </p>
+              )}
+            </div>
+
             {groups.map(group => (
               <div key={group.label} className="bg-slate-800/40 border border-slate-700/40 rounded-xl overflow-hidden flex-shrink-0">
                 <button
