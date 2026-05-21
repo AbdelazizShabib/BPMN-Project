@@ -1,15 +1,211 @@
 import { useEffect, useRef, useState } from 'react'
 import BpmnNavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
 import TokenSimulationModule from 'bpmn-js-token-simulation/lib/viewer'
+import minimapModule from 'diagram-js-minimap'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-js.css'
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
+import 'diagram-js-minimap/assets/diagram-js-minimap.css'
 import { SCRUM_BPMN } from '../data/scrumBpmn'
 import Header from '../components/layout/Header'
 import {
   ZoomIn, ZoomOut, Maximize2, Maximize, Minimize, RefreshCw,
-  Info, Play, Zap, AlertTriangle, TrendingUp, Circle, GitBranch, X, Database, Clock, FileText,
+  Info, Play, Zap, AlertTriangle, TrendingUp, Circle, GitBranch, X, Database,
+  Download, Navigation, ChevronLeft, ChevronRight,
 } from 'lucide-react'
+
+// Injected at runtime so these rules always win the cascade
+// (library CSS is bundled after App.css; a runtime <style> tag is always last)
+const BTS_DARK_CSS = `
+  .bjs-powered-by { display: none !important; }
+
+  /* canvas glow */
+  .bjs-container.simulation .djs-container           { box-shadow: inset 0 0 0 3px #7c3aed !important; }
+  .bjs-container.simulation.paused .djs-container   { box-shadow: inset 0 0 0 3px #334155 !important; }
+  .bjs-container.simulation.warning .djs-container  { box-shadow: inset 0 0 0 3px #ef4444 !important; }
+
+  /* toggle button */
+  .bts-toggle-mode {
+    background: rgba(15,23,42,0.95) !important;
+    border: 1px solid #334155 !important; border-radius: 12px !important;
+    color: #94a3b8 !important; font-size: 12px !important; font-weight: 600 !important;
+    padding: 8px 14px !important; font-family: inherit !important;
+    backdrop-filter: blur(8px) !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important; transition: all 0.2s !important;
+  }
+  .bjs-container.simulation .bts-toggle-mode,
+  .bts-toggle-mode:hover {
+    background: rgba(76,29,149,0.97) !important; border-color: #7c3aed !important;
+    color: #f8fafc !important; box-shadow: 0 4px 20px rgba(124,58,237,0.45) !important;
+  }
+
+  /* palette buttons */
+  .bts-palette { background: transparent !important; }
+  .bts-palette .bts-entry {
+    background: rgba(15,23,42,0.95) !important; border: 1px solid #334155 !important;
+    border-radius: 10px !important; color: #94a3b8 !important;
+    width: 36px !important; height: 36px !important; padding: 0 !important;
+    margin-bottom: 6px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+    backdrop-filter: blur(8px) !important; transition: all 0.15s ease !important;
+  }
+  .bts-palette .bts-entry:not(.disabled):hover {
+    background: rgba(76,29,149,0.97) !important; border-color: #7c3aed !important;
+    color: #f8fafc !important; box-shadow: 0 4px 16px rgba(124,58,237,0.4) !important;
+  }
+  .bts-palette .bts-entry.active {
+    background: #7c3aed !important; border-color: #8b5cf6 !important;
+    color: #f8fafc !important; box-shadow: 0 4px 16px rgba(124,58,237,0.5) !important;
+  }
+  .bts-palette .bts-entry.disabled {
+    background: rgba(15,23,42,0.4) !important; border-color: #1e293b !important; color: #1e293b !important;
+  }
+
+  /* log panel */
+  .bts-log {
+    background: rgba(8,12,24,0.98) !important; border: 1px solid #334155 !important;
+    border-radius: 16px !important; box-shadow: 0 24px 48px rgba(0,0,0,0.7) !important;
+    backdrop-filter: blur(16px) !important; width: 300px !important; overflow: hidden !important;
+  }
+  .bts-log .bts-header {
+    background: #1e293b !important; border-bottom: 1px solid #334155 !important;
+    color: #e2e8f0 !important; font-size: 11px !important; font-weight: 700 !important;
+    letter-spacing: 0.1em !important; text-transform: uppercase !important;
+    height: 40px !important; padding: 0 14px !important; display: flex !important;
+    align-items: center !important; justify-content: space-between !important;
+  }
+  .bts-log .bts-close { color: #475569 !important; background: none !important; border: none !important; cursor: pointer !important; }
+  .bts-log .bts-close:hover { color: #e2e8f0 !important; }
+  .bts-log .bts-content { background: transparent !important; padding: 8px !important; margin: 0 !important; }
+  .bts-log .bts-entry {
+    background: #1e293b !important; border: 1px solid #243045 !important;
+    border-radius: 8px !important; color: #94a3b8 !important;
+    font-size: 11px !important; padding: 7px 10px !important; margin-bottom: 5px !important;
+  }
+  .bts-log .bts-entry:last-child { margin-bottom: 0 !important; }
+  .bts-log .bts-entry.inactive { opacity: 0.35 !important; }
+  .bts-log .bts-entry.success {
+    background: #1a0f40 !important; border-color: #5b21b6 !important; color: #a78bfa !important;
+  }
+  .bts-log .bts-entry.warning {
+    background: #2d0f0f !important; border-color: #7f1d1d !important; color: #f87171 !important;
+  }
+  .bts-log .bts-entry > .bts-scope {
+    background: #0f172a !important; color: #7c3aed !important;
+    border-radius: 5px !important; font-size: 10px !important; padding: 2px 6px !important;
+  }
+  .bts-log *::-webkit-scrollbar { width: 4px !important; }
+  .bts-log *::-webkit-scrollbar-thumb { background: #334155 !important; border-radius: 2px !important; }
+  .bts-log *::-webkit-scrollbar-track { background: transparent !important; }
+
+  /* speed bar */
+  .bts-set-animation-speed {
+    background: rgba(15,23,42,0.96) !important; border: 1px solid #334155 !important;
+    border-radius: 12px !important; color: #94a3b8 !important; font-size: 11px !important;
+    font-weight: 600 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+    backdrop-filter: blur(8px) !important; padding-left: 10px !important; overflow: hidden !important;
+  }
+  .bts-set-animation-speed .bts-animation-speed-button { color: #64748b !important; border: none !important; background: transparent !important; }
+  .bts-set-animation-speed .bts-animation-speed-button.active,
+  .bts-set-animation-speed .bts-animation-speed-button:hover {
+    background: #7c3aed !important; color: #f8fafc !important;
+  }
+
+  /* token circles */
+  .bts-token-count {
+    background: #7c3aed !important; color: #f8fafc !important;
+    font-size: 11px !important; font-weight: 700 !important;
+    box-shadow: 0 2px 10px rgba(124,58,237,0.6) !important;
+  }
+  .bts-token-count.waiting {
+    background: #059669 !important; box-shadow: 0 2px 10px rgba(5,150,105,0.6) !important;
+  }
+
+  /* notifications */
+  .bts-notifications .bts-notification {
+    background: rgba(15,23,42,0.97) !important; border: 1px solid #334155 !important;
+    border-radius: 10px !important; color: #e2e8f0 !important; font-size: 12px !important;
+    backdrop-filter: blur(8px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  }
+  .bts-notifications .bts-notification.info  { background: rgba(30,41,59,0.97) !important; color: #cbd5e1 !important; }
+  .bts-notifications .bts-notification.success { background: rgba(26,15,64,0.97) !important; border-color: #5b21b6 !important; color: #a78bfa !important; }
+  .bts-notifications .bts-notification.warning { background: rgba(45,15,15,0.97) !important; border-color: #7f1d1d !important; color: #f87171 !important; }
+
+  /* on-node context pad buttons */
+  .bts-context-pad {
+    background: rgba(15,23,42,0.95) !important; border: 1px solid #334155 !important;
+    border-radius: 8px !important; color: #94a3b8 !important; opacity: 1 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+  }
+  .bts-context-pad:not(.disabled):hover,
+  .bts-context-pad:not(.disabled):focus-visible {
+    background: #7c3aed !important; border-color: #8b5cf6 !important; color: #f8fafc !important;
+  }
+  .bts-context-pad.disabled { background: rgba(15,23,42,0.4) !important; color: #1e293b !important; border-color: #1e293b !important; }
+
+  /* scope pills */
+  .bts-scopes .bts-scope {
+    background: #1e293b !important; border: 1px solid #334155 !important;
+    color: #94a3b8 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  }
+  .bts-scopes .bts-scope.inactive { opacity: 0.3 !important; }
+  .bts-scopes .bts-scope.focussed { box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #7c3aed !important; }
+
+  /* element notification overlays */
+  .bts-element-notification { background: #1e293b !important; color: #94a3b8 !important; border-radius: 6px !important; }
+  .bts-element-notification.success { background: #7c3aed !important; color: #f8fafc !important; }
+  .bts-element-notification.warning { background: #dc2626 !important; color: #f8fafc !important; }
+
+  /* Phase filter — dims non-active elements */
+  .djs-element.phase-dim { opacity: 0.08 !important; }
+
+  /* Minimap dark theme — repositioned to bottom-right, away from controls */
+  .djs-minimap {
+    top: auto !important; bottom: 16px !important; right: 16px !important;
+    background: rgba(8,12,24,0.97) !important;
+    border: 1px solid #334155 !important; border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+    z-index: 50 !important;
+  }
+  .djs-minimap:not(.open) .toggle {
+    background: rgba(15,23,42,0.95) !important;
+    color: #64748b !important; font-size: 10px !important;
+    font-weight: 700 !important; letter-spacing: 0.08em !important;
+    padding: 8px 12px !important; font-family: inherit !important;
+    border-radius: 10px !important;
+  }
+  .djs-minimap:not(.open) .toggle:hover { color: #a78bfa !important; }
+  .djs-minimap.open .toggle {
+    background: rgba(15,23,42,0.8) !important; color: #94a3b8 !important;
+    border-radius: 0 10px 0 0 !important; font-size: 12px !important;
+  }
+  .djs-minimap.open .map { width: 240px !important; height: 135px !important; }
+  .djs-minimap .viewport-dom { border-color: #7c3aed !important; border-width: 1.5px !important; }
+  .djs-minimap.open .overlay { background: rgba(0,0,0,0.15) !important; }
+
+  @keyframes xp-flash {
+    0%   { opacity: 1; transform: translateY(0)    scale(1);   }
+    60%  { opacity: 1; transform: translateY(-18px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-36px) scale(1);   }
+  }
+  .xp-flash-anim {
+    animation: xp-flash 1.1s ease-out forwards;
+    pointer-events: none;
+  }
+`
+
+// Inject once; lives for the lifetime of the app
+if (!document.getElementById('bts-dark-overrides')) {
+  const s = document.createElement('style')
+  s.id = 'bts-dark-overrides'
+  s.textContent = BTS_DARK_CSS
+  document.head.appendChild(s)
+}
+
+function parseXP(str) {
+  if (!str) return 0
+  const m = str.match(/\+(\d+)\s*XP/)
+  return m ? parseInt(m[1], 10) : 0
+}
 
 const NODE_INFO = {
   // ── Events ──────────────────────────────────────────────────────────────────
@@ -476,6 +672,29 @@ const groups = [
   { label: 'CI/CD Pipeline', color: 'text-green-400', ids: ['SE_CI_Start', 'T_CI_Build', 'T_CI_Test', 'GW_CI', 'T_CI_Notify', 'EE_CI_Done', 'EE_CI_Fail'] },
 ]
 
+const WALK_SEQUENCE = [
+  'SE_Start',
+  'T_Vision', 'T_Stories', 'T_Estimate', 'T_Prioritize',
+  'DS_ProductBacklog', 'GW_Backlog', 'T_AddStories',
+  'T_SprintPlan', 'TB_SprintPlan',
+  'T_Goal', 'DO_SprintGoal',
+  'T_SelectItems', 'T_SprintBacklog', 'DO_SprintBacklog',
+  'GW_Capacity', 'T_AdjustScope',
+  'T_DailyScrum', 'GW_Impediment', 'T_RemImpediment',
+  'T_Dev', 'TB_SprintDeadline',
+  'T_CodeReview', 'GW_Quality', 'T_FixIssues',
+  'DO_DoD',
+  'T_Testing', 'GW_Tests', 'T_FixDefects',
+  'GW_SprintDone',
+  'T_PrepDemo', 'T_SprintReview', 'T_Feedback',
+  'GW_Accepted', 'T_UpdateBacklog',
+  'T_Retro', 'T_Improve', 'T_UpdateProcess',
+  'GW_Release', 'T_Deploy', 'EB_Deploy', 'T_Rollback',
+  'T_Monitor', 'GW_MoreSprints', 'EE_Released',
+  'SE_CI_Start', 'T_CI_Build', 'T_CI_Test',
+  'GW_CI', 'T_CI_Notify', 'EE_CI_Done', 'EE_CI_Fail',
+]
+
 const PHASE_COLORS = {
   'Backlog Preparation': { fill: '#0d2240', stroke: '#60a5fa' },
   'Sprint Planning': { fill: '#1a1040', stroke: '#a78bfa' },
@@ -497,11 +716,30 @@ function applyPhaseColors(viewer) {
     if (!c) return
     const gfx = reg.getGraphics(id)
     if (!gfx) return
-    const shape = gfx.querySelector('.djs-visual rect, .djs-visual polygon, .djs-visual circle')
-    if (!shape) return
-    shape.style.fill = c.fill
-    shape.style.stroke = c.stroke
-    shape.style.strokeWidth = '2'
+
+    if (info.type === 'gateway') {
+      // Color the diamond background
+      const poly = gfx.querySelector('.djs-visual polygon')
+      if (poly) {
+        poly.style.fill = c.fill
+        poly.style.stroke = c.stroke
+        poly.style.strokeWidth = '2.5'
+      }
+      // Recolor inner marker paths (X, +, circles) to the bright phase accent
+      // so they remain visible against the dark diamond fill
+      gfx.querySelectorAll('.djs-visual path').forEach(p => {
+        p.style.stroke = c.stroke
+      })
+      gfx.querySelectorAll('.djs-visual circle').forEach(ci => {
+        ci.style.stroke = c.stroke
+      })
+    } else {
+      const shape = gfx.querySelector('.djs-visual rect, .djs-visual polygon, .djs-visual circle')
+      if (!shape) return
+      shape.style.fill = c.fill
+      shape.style.stroke = c.stroke
+      shape.style.strokeWidth = '2'
+    }
   })
 }
 
@@ -512,9 +750,9 @@ function NodeTypeIcon({ type, color, size = 14 }) {
   return <Play size={size} className={color} />
 }
 
-function NodeOverlay({ node, onClose }) {
+function NodeOverlay({ node, onClose, bottomShift }) {
   return (
-    <div className="absolute bottom-4 left-4 right-4 lg:right-auto lg:w-[420px] z-10 bg-slate-900/97 border border-slate-700 rounded-2xl shadow-2xl backdrop-blur overflow-hidden">
+    <div className={`absolute ${bottomShift ? 'bottom-20' : 'bottom-4'} left-4 right-4 lg:right-auto lg:w-[420px] z-10 bg-slate-900/97 border border-slate-700 rounded-2xl shadow-2xl backdrop-blur overflow-hidden`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-4 border-b border-slate-700/60">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -592,10 +830,20 @@ export default function BpmnViewer() {
   const prevHighlighted = useRef(null)
   const sidebarItemRefs = useRef({})
 
+  const earnedNodes = useRef(new Set())
+  const selectNodeRef = useRef(null)
+
   const [selectedNode, setSelectedNode] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [totalXP, setTotalXP] = useState(0)
+  const [xpFlash, setXpFlash] = useState(null)
+  const [walkMode, setWalkMode] = useState(false)
+  const [walkIndex, setWalkIndex] = useState(0)
+  const [activePhase, setActivePhase] = useState(null)
+  const [hoverNode, setHoverNode] = useState(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -604,7 +852,7 @@ export default function BpmnViewer() {
 
     const viewer = new BpmnNavigatedViewer({
       container: containerRef.current,
-      additionalModules: [TokenSimulationModule],
+      additionalModules: [TokenSimulationModule, minimapModule],
     })
     modelerRef.current = viewer
 
@@ -616,14 +864,47 @@ export default function BpmnViewer() {
       setLoading(false)
 
       viewer.get('eventBus').on('element.click', ({ element }) => {
-        if (!NODE_INFO[element.id]) return
-        setSelectedNode({ id: element.id, ...NODE_INFO[element.id] })
+        const info = NODE_INFO[element.id]
+        if (!info) return
+        setSelectedNode({ id: element.id, ...info })
         if (prevHighlighted.current) {
           try { canvas.removeMarker(prevHighlighted.current, 'selected-highlight') } catch (_) { }
         }
         canvas.addMarker(element.id, 'selected-highlight')
         prevHighlighted.current = element.id
       })
+
+      // XP earned when the moving token exits (completes) an element during simulation
+      viewer.get('eventBus').on('tokenSimulation.simulator.trace', ({ action, element }) => {
+        if (action !== 'exit') return
+        const info = NODE_INFO[element.id]
+        if (!info) return
+        if (!earnedNodes.current.has(element.id)) {
+          const xp = parseXP(info.xpReward)
+          if (xp > 0) {
+            earnedNodes.current.add(element.id)
+            setTotalXP(prev => prev + xp)
+            setXpFlash({ amount: xp, key: Date.now() })
+          }
+        }
+      })
+
+      // Hover tooltip
+      const reg = viewer.get('elementRegistry')
+      viewer.get('eventBus').on('element.hover', ({ element }) => {
+        const info = NODE_INFO[element.id]
+        if (!info || !canvasWrapRef.current) return
+        const gfx = reg.getGraphics(element.id)
+        if (!gfx) return
+        const elRect = gfx.getBoundingClientRect()
+        const wrapRect = canvasWrapRef.current.getBoundingClientRect()
+        setHoverNode({ id: element.id, ...info })
+        setTooltipPos({
+          x: Math.max(80, Math.min(elRect.left - wrapRect.left + elRect.width / 2, wrapRect.width - 80)),
+          y: Math.max(8, elRect.top - wrapRect.top - 6),
+        })
+      })
+      viewer.get('eventBus').on('element.out', () => setHoverNode(null))
 
       // Use ResizeObserver to ensure we zoom and fit only when the container is fully rendered and has non-zero dimensions
       resizeObserver = new ResizeObserver(entries => {
@@ -696,6 +977,14 @@ export default function BpmnViewer() {
   const reset = () => modelerRef.current?.importXML(SCRUM_BPMN).then(() => {
     reorderSvgLayers()
     applyPhaseColors(modelerRef.current)
+    earnedNodes.current.clear()
+    setTotalXP(0)
+    setXpFlash(null)
+    setWalkMode(false)
+    setWalkIndex(0)
+    setSelectedNode(null)
+    setActivePhase(null)
+    setHoverNode(null)
     requestAnimationFrame(() => requestAnimationFrame(() => fitView()))
   })
   const toggleFullscreen = () => {
@@ -703,7 +992,7 @@ export default function BpmnViewer() {
     else document.exitFullscreen?.()
   }
 
-  const selectNode = id => {
+  const selectNode = (id, zoomToNode = false) => {
     const info = NODE_INFO[id]
     if (!info) return
     setSelectedNode({ id, ...info })
@@ -720,8 +1009,110 @@ export default function BpmnViewer() {
     prevHighlighted.current = id
     const cx = element.x + (element.width || 0) / 2
     const cy = element.y + (element.height || 0) / 2
-    canvas.zoom(canvas.zoom(), { x: cx, y: cy })
+    canvas.zoom(zoomToNode ? 0.72 : canvas.zoom(), { x: cx, y: cy })
   }
+
+  const startWalk = () => {
+    setWalkMode(true)
+    setWalkIndex(0)
+    selectNode(WALK_SEQUENCE[0], true)
+  }
+
+  const walkNext = () => {
+    setWalkIndex(prev => {
+      const next = Math.min(prev + 1, WALK_SEQUENCE.length - 1)
+      selectNode(WALK_SEQUENCE[next], true)
+      return next
+    })
+  }
+
+  const walkPrev = () => {
+    setWalkIndex(prev => {
+      const p = Math.max(prev - 1, 0)
+      selectNode(WALK_SEQUENCE[p], true)
+      return p
+    })
+  }
+
+  const stopWalk = () => {
+    setWalkMode(false)
+    setWalkIndex(0)
+  }
+
+  const exportSVG = async () => {
+    const viewer = modelerRef.current
+    if (!viewer) return
+    try {
+      const { svg } = await viewer.saveSVG()
+      const blob = new Blob([svg], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'scrum-bpmn-gamified.svg'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('SVG export failed', e)
+    }
+  }
+
+  // Keep selectNodeRef current so the keyboard handler always calls the latest closure
+  useEffect(() => { selectNodeRef.current = selectNode })
+
+  const applyPhaseFilter = (phase) => {
+    const viewer = modelerRef.current
+    if (!viewer) return
+    const canvas = viewer.get('canvas')
+    Object.entries(NODE_INFO).forEach(([id, info]) => {
+      try {
+        if (!phase || info.phase === phase) canvas.removeMarker(id, 'phase-dim')
+        else canvas.addMarker(id, 'phase-dim')
+      } catch (_) {}
+    })
+  }
+
+  const togglePhaseFilter = (phase) => {
+    const next = activePhase === phase ? null : phase
+    setActivePhase(next)
+    applyPhaseFilter(next)
+  }
+
+  // Keyboard navigation: arrows follow sequence flows; Tab cycles WALK_SEQUENCE
+  useEffect(() => {
+    if (!selectedNode) return
+    const handler = (e) => {
+      const active = document.activeElement
+      const tag = active?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return
+      if (!modelerRef.current) return
+      const er = modelerRef.current.get('elementRegistry')
+      const el = er.get(selectedNode.id)
+      if (!el) return
+      let targetId = null
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        const conn = (el.outgoing || []).find(c => NODE_INFO[c.target?.id])
+        if (conn) targetId = conn.target.id
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        const conn = (el.incoming || []).find(c => NODE_INFO[c.source?.id])
+        if (conn) targetId = conn.source.id
+      } else if (e.key === 'Tab' && !e.shiftKey) {
+        e.preventDefault()
+        const idx = WALK_SEQUENCE.indexOf(selectedNode.id)
+        targetId = WALK_SEQUENCE[(idx + 1) % WALK_SEQUENCE.length]
+      } else if (e.key === 'Tab' && e.shiftKey) {
+        e.preventDefault()
+        const idx = WALK_SEQUENCE.indexOf(selectedNode.id)
+        targetId = WALK_SEQUENCE[(idx - 1 + WALK_SEQUENCE.length) % WALK_SEQUENCE.length]
+      }
+      if (targetId) selectNodeRef.current?.(targetId)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selectedNode])
 
   const controls = [
     { icon: ZoomIn, action: () => zoom('in'), title: 'Zoom In' },
@@ -729,6 +1120,8 @@ export default function BpmnViewer() {
     { icon: Maximize2, action: fitView, title: 'Fit View' },
     { icon: RefreshCw, action: reset, title: 'Reset' },
     { icon: isFullscreen ? Minimize : Maximize, action: toggleFullscreen, title: isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' },
+    { icon: Download, action: exportSVG, title: 'Export SVG', active: false },
+    { icon: Navigation, action: walkMode ? stopWalk : startWalk, title: walkMode ? 'Stop Walkthrough' : 'Walk the Process', active: walkMode },
   ]
 
   return (
@@ -742,11 +1135,18 @@ export default function BpmnViewer() {
         {/* Info banner */}
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-950/30 border border-violet-800/30 text-xs text-violet-300 flex-shrink-0">
           <Info size={13} className="flex-shrink-0 text-violet-400" />
-          <p className="truncate">
-            Click any element in the diagram or the list to explore its <span className="text-white font-medium">Scrum purpose</span>,{' '}
-            <span className="text-violet-300 font-medium">gamification mechanic</span>, and{' '}
-            <span className="text-red-300 font-medium">associated risk</span>.
+          <p className="truncate flex-1">
+            Click elements to explore their <span className="text-white font-medium">Scrum purpose</span>.
+            Enable <span className="text-violet-300 font-medium">token simulation</span> to run the process and earn{' '}
+            <span className="text-yellow-300 font-medium">XP</span>.
+            {walkMode && <span className="ml-2 text-violet-400 font-semibold">· Walk mode active</span>}
           </p>
+          {totalXP > 0 && (
+            <div className="flex items-center gap-1.5 flex-shrink-0 px-2.5 py-1 rounded-lg bg-violet-900/50 border border-violet-700/40">
+              <Zap size={11} className="text-violet-400" />
+              <span className="font-mono font-bold text-violet-200">{totalXP.toLocaleString()} XP</span>
+            </div>
+          )}
         </div>
 
         {/* Diagram + sidebar */}
@@ -775,17 +1175,83 @@ export default function BpmnViewer() {
 
             {/* Controls */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
-              {controls.map(({ icon: Icon, action, title }) => (
+              {controls.map(({ icon: Icon, action, title, active }) => (
                 <button key={title} onClick={action} title={title}
-                  className="w-9 h-9 rounded-lg bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:border-violet-500/60 hover:bg-slate-700 transition-all flex items-center justify-center shadow-lg">
+                  className={`w-9 h-9 rounded-lg border transition-all flex items-center justify-center shadow-lg ${
+                    active
+                      ? 'bg-violet-700/90 border-violet-500 text-white hover:bg-violet-600'
+                      : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:text-white hover:border-violet-500/60 hover:bg-slate-700'
+                  }`}>
                   <Icon size={16} />
                 </button>
               ))}
             </div>
 
+            {/* Hover tooltip — suppressed when that node's overlay is already open */}
+            {hoverNode && hoverNode.id !== selectedNode?.id && (
+              <div
+                className="absolute z-20 pointer-events-none"
+                style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -100%)' }}
+              >
+                <div className="bg-slate-900/97 border border-slate-600 rounded-lg shadow-xl px-2.5 py-1.5 whitespace-nowrap">
+                  <p className="text-xs font-semibold text-white">{hoverNode.title}</p>
+                  {hoverNode.phase && <p className="text-xs text-slate-400 mt-0.5">{hoverNode.phase}</p>}
+                </div>
+                <div className="w-2 h-2 bg-slate-900/97 border-r border-b border-slate-600 rotate-45 mx-auto -mt-1" />
+              </div>
+            )}
+
+            {/* XP flash */}
+            {xpFlash && (
+              <div
+                key={xpFlash.key}
+                className="xp-flash-anim absolute top-14 right-14 z-20 flex items-center gap-1 text-violet-300 font-bold text-sm select-none"
+                onAnimationEnd={() => setXpFlash(null)}
+              >
+                <Zap size={13} className="text-violet-400" />
+                +{xpFlash.amount} XP
+              </div>
+            )}
+
+            {/* Walk nav bar */}
+            {walkMode && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-900/97 border border-violet-700/50 rounded-xl px-3 py-2 shadow-2xl backdrop-blur">
+                <button
+                  onClick={walkPrev}
+                  disabled={walkIndex === 0}
+                  title="Previous step"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <div className="text-center px-1 min-w-[110px]">
+                  <p className="text-xs font-mono text-slate-300">{walkIndex + 1} / {WALK_SEQUENCE.length}</p>
+                  <p className="text-xs text-violet-400 font-medium truncate max-w-[140px]">
+                    {NODE_INFO[WALK_SEQUENCE[walkIndex]]?.phase ?? ''}
+                  </p>
+                </div>
+                <button
+                  onClick={walkNext}
+                  disabled={walkIndex === WALK_SEQUENCE.length - 1}
+                  title="Next step"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                >
+                  <ChevronRight size={14} />
+                </button>
+                <div className="w-px h-5 bg-slate-700 mx-1" />
+                <button
+                  onClick={stopWalk}
+                  title="Stop walkthrough"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-slate-700 transition-all"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+
             {/* Node detail overlay */}
             {selectedNode && (
-              <NodeOverlay node={selectedNode} onClose={() => setSelectedNode(null)} />
+              <NodeOverlay node={selectedNode} onClose={() => setSelectedNode(null)} bottomShift={walkMode} />
             )}
           </div>
 
@@ -793,9 +1259,18 @@ export default function BpmnViewer() {
           <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-2 overflow-y-auto lg:max-h-full">
             {groups.map(group => (
               <div key={group.label} className="bg-slate-800/40 border border-slate-700/40 rounded-xl overflow-hidden flex-shrink-0">
-                <p className={`text-xs font-semibold uppercase tracking-wider px-3 py-2 bg-slate-800/60 border-b border-slate-700/40 ${group.color}`}>
-                  {group.label}
-                </p>
+                <button
+                  onClick={() => togglePhaseFilter(group.label)}
+                  title={activePhase === group.label ? 'Clear phase filter' : `Highlight ${group.label} phase`}
+                  className={`w-full text-left text-xs font-semibold uppercase tracking-wider px-3 py-2 border-b transition-colors flex items-center justify-between gap-2 ${
+                    activePhase === group.label
+                      ? 'bg-violet-900/40 border-violet-700/50 text-white'
+                      : `bg-slate-800/60 border-slate-700/40 ${group.color} hover:bg-slate-700/50`
+                  }`}
+                >
+                  <span>{group.label}</span>
+                  {activePhase === group.label && <span className="text-violet-400 text-base leading-none">●</span>}
+                </button>
                 <div className="p-1">
                   {group.ids.map(id => {
                     const info = NODE_INFO[id]
