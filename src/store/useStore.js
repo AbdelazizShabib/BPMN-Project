@@ -159,6 +159,21 @@ export const useStore = create((set, get) => ({
     }))
   },
 
+  createBacklogTask: (taskData) => {
+    const { backlog } = get()
+    set({
+      backlog: [...backlog, {
+        id: `pb-${Date.now()}`,
+        title: taskData.title,
+        description: taskData.description || '',
+        priority: taskData.priority,
+        storyPoints: taskData.storyPoints,
+        type: taskData.type,
+        assignee: null,
+      }]
+    })
+  },
+
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
   removeTaskFromSprint: (taskId, fromColumn) => {

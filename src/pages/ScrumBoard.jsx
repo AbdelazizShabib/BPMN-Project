@@ -90,13 +90,15 @@ function TaskCard({ task, index, teamMembers, columnId, onMoveToBacklog }) {
                 <Zap size={9} />
                 {isDone ? `+${xp.total}` : xp.total}
               </div>
-              <button
-                onClick={e => { e.stopPropagation(); onMoveToBacklog(task.id, columnId) }}
-                title="Move to Backlog"
-                className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-500 hover:text-orange-400 transition-all rounded"
-              >
-                <RotateCcw size={11} />
-              </button>
+              {!isDone && (
+                <button
+                  onClick={e => { e.stopPropagation(); onMoveToBacklog(task.id, columnId) }}
+                  title="Move to Backlog"
+                  className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-500 hover:text-orange-400 transition-all rounded"
+                >
+                  <RotateCcw size={11} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -221,7 +223,7 @@ function Column({ column, teamMembers, onMoveToBacklog, eligibleTasks, onAddTask
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 px-3 pb-3 space-y-2.5 min-h-24 transition-colors rounded-b-xl ${snapshot.isDraggingOver ? 'bg-violet-950/20' : ''}`}
+            className={`overflow-y-auto px-3 pb-3 space-y-2.5 min-h-24 max-h-[55vh] transition-colors rounded-b-xl ${snapshot.isDraggingOver ? 'bg-violet-950/20' : ''}`}
           >
             {column.tasks.map((task, index) => (
               <TaskCard
@@ -288,14 +290,135 @@ function BacklogItem({ item, onAddToSprint }) {
   )
 }
 
+const SP_OPTIONS = [1, 2, 3, 5, 8, 13]
+const TYPE_OPTIONS = ['feature', 'bug', 'chore', 'design', 'test', 'improvement']
+const PRIORITY_OPTIONS = ['high', 'medium', 'low']
+
+function CreateTaskModal({ onClose, onCreate }) {
+  const [form, setForm] = useState({ title: '', description: '', type: 'feature', priority: 'medium', storyPoints: 3 })
+  const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const handleSubmit = e => {
+    e.preventDefault()
+    if (!form.title.trim()) return
+    onCreate(form)
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-sm font-bold text-white">New Backlog Item</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs text-slate-400 mb-1.5 block">Title *</label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={e => set('title', e.target.value)}
+              placeholder="What needs to be done?"
+              autoFocus
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-violet-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-400 mb-1.5 block">Description</label>
+            <textarea
+              value={form.description}
+              onChange={e => set('description', e.target.value)}
+              placeholder="Optional details..."
+              rows={2}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 mb-1.5 block">Type</label>
+              <select
+                value={form.type}
+                onChange={e => set('type', e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500"
+              >
+                {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1.5 block">Priority</label>
+              <select
+                value={form.priority}
+                onChange={e => set('priority', e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500"
+              >
+                {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-400 mb-2 block">Story Points</label>
+            <div className="flex gap-2">
+              {SP_OPTIONS.map(sp => (
+                <button
+                  key={sp}
+                  type="button"
+                  onClick={() => set('storyPoints', sp)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${
+                    form.storyPoints === sp
+                      ? 'bg-violet-600 border-violet-500 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-white'
+                  }`}
+                >
+                  {sp}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-slate-700 text-sm text-slate-400 hover:text-white hover:border-slate-600 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!form.title.trim()}
+              className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Add to Backlog
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function ScrumBoard() {
-  const { sprint, teamMembers, backlog, moveTask, reorderTasksInColumn, addTaskToSprint, removeTaskFromSprint } = useStore()
+  const { sprint, teamMembers, backlog, moveTask, reorderTasksInColumn, addTaskToSprint, removeTaskFromSprint, createBacklogTask } = useStore()
   const [showBacklog, setShowBacklog] = useState(true)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const columnOrder = ['todo', 'inprogress', 'testing', 'done']
 
   const onDragEnd = async ({ source, destination, draggableId }) => {
     if (!destination) return
     if (source.droppableId === destination.droppableId && source.index === destination.index) return
+    if (source.droppableId === 'done' && destination.droppableId !== 'done') return
     if (source.droppableId === destination.droppableId) {
       reorderTasksInColumn(source.droppableId, source.index, destination.index)
     } else {
@@ -401,12 +524,12 @@ export default function ScrumBoard() {
 
         {/* Product Backlog */}
         <div className="bg-slate-800/40 border border-slate-700/40 rounded-2xl overflow-hidden flex-shrink-0">
-          <button
-            onClick={() => setShowBacklog(!showBacklog)}
-            className="w-full flex items-center justify-between p-4 hover:bg-slate-700/20 transition-colors"
-          >
-            <div className="flex items-center gap-2.5">
-              <Package size={16} className="text-violet-400" />
+          <div className="flex items-center gap-3 px-4 py-3">
+            <button
+              onClick={() => setShowBacklog(!showBacklog)}
+              className="flex-1 flex items-center gap-2.5 text-left hover:opacity-80 transition-opacity"
+            >
+              <Package size={16} className="text-violet-400 flex-shrink-0" />
               <span className="text-sm font-semibold text-white">Product Backlog</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">{backlog.length} items</span>
               {backlog.length > 0 && (
@@ -415,9 +538,19 @@ export default function ScrumBoard() {
                   +{backlog.reduce((s, t) => s + getTaskXP(t).total, 0)} XP available
                 </span>
               )}
-            </div>
-            <ChevronRight size={16} className={`text-slate-400 transition-transform ${showBacklog ? 'rotate-90' : ''}`} />
-          </button>
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-700/40 hover:bg-violet-600/30 transition-colors font-medium flex-shrink-0"
+            >
+              <Plus size={12} />New Task
+            </button>
+            <ChevronRight
+              size={16}
+              onClick={() => setShowBacklog(s => !s)}
+              className={`text-slate-400 transition-transform cursor-pointer flex-shrink-0 ${showBacklog ? 'rotate-90' : ''}`}
+            />
+          </div>
           {showBacklog && (
             <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
               {backlog.length === 0 ? (
@@ -429,6 +562,13 @@ export default function ScrumBoard() {
           )}
         </div>
       </main>
+
+      {showCreateModal && (
+        <CreateTaskModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={data => { createBacklogTask(data); setShowCreateModal(false) }}
+        />
+      )}
     </div>
   )
 }
